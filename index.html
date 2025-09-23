@@ -3,203 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BITYᴷᴺᴵᴳᴴᵀ — Телеграмм канал о белом хакинге</title>
-  <!-- Шрифты -->
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    /* Базовые стили */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      color: #fff; 
-      background-color: #000;
-      overflow-x: hidden;
-      scroll-behavior: smooth;
-    }
-
-    h1, h2, a, p, .btn {
-      animation: fadeInUp 1s forwards;
-    }
-
-    .delay-1 { animation-delay: 0.3s; }
-    .delay-2 { animation-delay: 0.6s; }
-    .delay-3 { animation-delay: 0.9s; }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    header {
-      text-align: center;
-      padding: 5rem 2rem 3rem;
-    }
-
-    header h1 {
-      font-size: 3rem;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 1rem;
-    }
-
-    header p {
-      font-size: 1.2rem;
-      color: #ccc;
-      max-width: 600px;
-      margin: auto;
-    }
-
-    section {
-      max-width: 800px;
-      margin: 3rem auto;
-      padding: 2rem;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 10px;
-    }
-
-    section h2 {
-      font-size: 2rem;
-      color: #fff;
-      font-family: 'JetBrains Mono', monospace;
-      margin-bottom: 1rem;
-    }
-
-    section p {
-      font-size: 1rem;
-      line-height: 1.7;
-      color: #ccc;
-    }
-
-    .links {
-      margin-top: 2rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .links a {
-      display: inline-block;
-      padding: 0.6rem 1.2rem;
-      background-color: #fff;
-      color: #000;
-      font-weight: bold;
-      text-decoration: none;
-      border-radius: 5px;
-      transition: background 0.3s ease;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .links a:hover {
-      background-color: #ddd;
-    }
-
-    canvas#matrix {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      background-color: black;
-    }
-
-    footer {
-      text-align: center;
-      padding: 3rem 1rem 2rem;
-      font-size: 0.9rem;
-      color: #555;
-    }
-
-    .accent {
-      color: #0F0;
-    }
-  </style>
+  <title>ALESIA</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- Фон-анимация -->
-  <canvas id="matrix"></canvas>
-
-  <!-- Заголовок -->
-  <header class="delay-1">
-    <h1>BITYᴷᴺᴵᴳᴴᵀ</h1>
-    <p>Канал о белом хакинге и пентестинге.</p>
-  </header>
-
-  <!-- Описание -->
-  <section class="delay-2">
-    <h2>О проекте</h2>
-    <p>
-      Это закрытый информационный поток для тех, кто интересуется безопасностью, этичным взломом и анализом систем.
-    </p>
-    <p style="margin-top: 1rem;">
-      Мы рассказываем о реальных кейсах, методологиях тестирования безопасности и современных инструментах анализа.
-    </p>
-    <p style="margin-top: 1rem;">
-      Контент ориентирован на <span class="accent">белых хакеров</span>, студентов IT-специальностей и специалистов по информационной безопасности.
-    </p>
-  </section>
-
-  <!-- Контакты -->
-  <section class="delay-3">
-    <h2>Присоединиться</h2>
-    <div class="links">
-      <a href="https://t.me/BITYKnight"  target="_blank">💬 Перейти в Telegram</a>
-      <a href="https://t.me/Gedrain"  target="_blank">🖋️ Автор: @Gedrain</a>
+  <!-- Экран загрузки -->
+  <div id="loader" class="loader-overlay">
+    <div class="loader-content">
+      <h1 class="alesia-title">Алесия</h1>
+      <p class="click-instruction">Чтобы продолжить нажмите на экран</p>
     </div>
-  </section>
+  </div>
 
-  <!-- Подвал -->
-  <footer>
-    &copy; 2025 BITYᴷᴺᴵᴳᴴᵀ. Все материалы предназначены только для образовательных целей.
-  </footer>
+  <!-- Основной контент (скрыт до клика) -->
+  <div id="main-content" class="main-content hidden">
+    <!-- Видео на фоне -->
+    <video id="bgVideo" autoplay loop muted playsinline>
+      <source src="HE.MP4" type="video/mp4">
+      Ваш браузер не поддерживает видео.
+    </video>
 
-  <!-- Анимация матрицы -->
-  <script>
-    const canvas = document.getElementById("matrix");
-    const ctx = canvas.getContext("2d");
+    <!-- Глоу подложка -->
+    <div class="glow-overlay"></div>
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    <!-- Центральный блок с био и ссылками -->
+    <div class="bio-container">
+      <div class="bio-text">
+        <p>✨ Добро пожаловать на мою страничку ✨</p>
+        <p>💜Здесь ты найдёшь мои контакты.💜</p>
+        <p>💜Для тех, кто решится написать первым — особенно смелых, дерзких, любопытных, тех, кто не боится сделать шаг навстречу…💜</p> 
+        <p>💜у меня есть маленькие, но очень приятные сюрпризы. Подарочки — не просто так, а как знак внимания.💜</p>
+        <p>💜За инициативу. За смелость. За то, что ты не прошёл мимо.💜</p> 
+        <p>💜Не нужно быть идеальным. Не нужно долго думать.💜</p>
+        <p>💜Просто напиши — и посмотри, что будет дальше.💜</p>
+        <p>💜Иногда самые неожиданные сообщения приводят к самым тёплым историям.💜</p>
+      </div>
+      <div class="social-links">
+        <a href="https://steamcommunity.com/id/yourprofile" target="_blank" class="social-icon">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam">
+        </a>
+        <a href="https://t.me/yourusername" target="_blank" class="social-icon">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram">
+        </a>
+      </div>
+    </div>
+  </div>
 
-    const letters = "01йцукенгшщзхъфывапролджэячсмитьбюqwertyuiopasdfghjklzxcvbnm".split("");
-    const fontSize = 14;
-    const columns = canvas.width / fontSize;
-
-    let drops = Array(Math.floor(columns)).fill(1);
-
-    function drawMatrix() {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = "#0F0";
-      ctx.font = fontSize + "px monospace";
-
-      for (let i = 0; i < drops.length; i++) {
-        const text = letters[Math.floor(Math.random() * letters.length)];
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-
-        drops[i]++;
-      }
-    }
-    setInterval(drawMatrix, 50);
-  </script>
-
+  <script src="script.js"></script>
 </body>
 </html>

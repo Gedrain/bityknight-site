@@ -1,0 +1,168 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  background: #000;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Экран загрузки */
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #2b0b3f, #1a052e);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  transition: opacity 0.8s ease;
+}
+
+.loader-content {
+  text-align: center;
+}
+
+.alesia-title {
+  font-size: 6rem;
+  font-weight: 900;
+  color: #ff77ff;
+  text-shadow: 
+    0 0 10px #ff77ff,
+    0 0 20px #ff77ff,
+    0 0 30px #ff77ff,
+    0 0 40px #ff77ff;
+  letter-spacing: 8px;
+  animation: pulse 2s infinite alternate;
+  margin: 0;
+}
+
+@keyframes pulse {
+  0% { text-shadow: 0 0 10px #ff77ff; }
+  100% { text-shadow: 0 0 30px #ff77ff, 0 0 50px #ff77ff, 0 0 70px #ff77ff; }
+}
+
+.click-instruction {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  color: #e0c3fc;
+  opacity: 0.8;
+  animation: fadeInOut 2s infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
+}
+
+/* Основной контент */
+.main-content {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-content.hidden {
+  display: none;
+}
+
+/* Видео на фоне */
+#bgVideo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  object-fit: cover;
+}
+
+/* Глоу подложка */
+.glow-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255, 100, 255, 0.2), transparent 70%);
+  z-index: 2;
+  pointer-events: none;
+  animation: rotateGlow 15s linear infinite;
+}
+
+@keyframes rotateGlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Блок с био и соц. сетями */
+.bio-container {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  padding: 2rem;
+  background: rgba(30, 5, 40, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 150, 255, 0.3);
+  box-shadow: 
+    0 0 20px rgba(255, 100, 255, 0.5),
+    inset 0 0 15px rgba(255, 150, 255, 0.3);
+  animation: slideUp 1s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.bio-text p {
+  color: #fff;
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.social-links {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.social-icon {
+  display: block;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(255, 100, 255, 0.5);
+}
+
+.social-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(255, 100, 255, 0.8);
+  background: rgba(255, 100, 255, 0.2);
+}
+
+.social-icon img {
+  width: 70%;
+  height: 70%;
+  filter: drop-shadow(0 0 5px #ff77ff);
+}
