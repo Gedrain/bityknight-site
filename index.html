@@ -2,9 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Сайт Двух Подружек</title>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Алесия & Серафима</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -14,278 +14,264 @@
 
     body {
       font-family: 'Poppins', sans-serif;
-      background: #000;
-      color: white;
-      overflow: hidden;
-      height: 100vh;
+      background: url('FOTO.jpg') center/cover fixed;
+      color: #fff;
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       position: relative;
-    }
-
-    #background-video {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      min-width: 100%;
-      min-height: 100%;
-      width: auto;
-      height: auto;
-      z-index: -2;
-      transform: translate(-50%, -50%);
-      object-fit: cover;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
     }
 
     .overlay {
-      position: fixed;
+      position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.55);
+      background: linear-gradient(135deg, rgba(30, 5, 50, 0.85), rgba(10, 5, 30, 0.95));
       z-index: -1;
     }
 
-    /* Начальный экран */
-    #start-screen {
-      text-align: center;
+    .container {
+      width: 92%;
+      max-width: 900px;
+      padding: 1.8rem 1.2rem;
       z-index: 10;
-      opacity: 1;
-      transition: opacity 0.8s ease;
+      text-align: center;
     }
 
+    /* Начальный экран */
     #start-screen h1 {
-      font-family: 'Dancing Script', cursive;
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-      background: linear-gradient(135deg, #ff69b4, #ba55d3, #da70d6);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
-      animation: titleGlow 2.5s infinite alternate;
-    }
-
-    @keyframes titleGlow {
-      0%   { text-shadow: 0 0 15px rgba(255, 105, 180, 0.5); }
-      100% { text-shadow: 0 0 30px rgba(186, 85, 211, 0.9), 0 0 45px rgba(218, 112, 214, 0.7); }
+      font-family: 'Caveat', cursive;
+      font-size: 2.8rem;
+      margin-bottom: 1rem;
+      color: #ff9ec9;
+      letter-spacing: 0.5px;
+      animation: soft-glow 3s infinite alternate;
+      text-shadow: 
+        0 0 10px rgba(255, 158, 201, 0.7),
+        0 0 20px rgba(218, 112, 214, 0.5);
     }
 
     #start-screen p {
-      font-size: 1.4rem;
-      color: #ffb6c1;
+      font-size: 1.25rem;
+      color: #f0d9ff;
       font-weight: 300;
-      text-shadow: 0 0 10px rgba(255, 182, 193, 0.6);
-      letter-spacing: 1px;
+      line-height: 1.5;
+      letter-spacing: 0.3px;
+    }
+
+    @keyframes soft-glow {
+      from { text-shadow: 0 0 8px rgba(255, 158, 201, 0.6); }
+      to { text-shadow: 0 0 20px rgba(255, 158, 201, 1), 0 0 30px rgba(218, 112, 214, 0.7); }
     }
 
     /* Основной контент */
     #main-content {
       display: none;
       opacity: 0;
-      transition: opacity 0.6s ease;
-      z-index: 10;
-      width: 92%;
-      max-width: 1100px;
+      transform: translateY(15px);
+      transition: opacity 1s ease, transform 1s ease;
     }
 
-    .profiles-container {
+    .intro-text {
+      font-size: 1.15rem;
+      color: #e6ccf5;
+      margin: 0 auto 2rem;
+      line-height: 1.6;
+      max-width: 650px;
+      font-weight: 300;
+      text-shadow: 0 0 5px rgba(230, 204, 245, 0.3);
+    }
+
+    .profiles {
       display: flex;
-      justify-content: center;
-      gap: 3.2rem;
-      flex-wrap: wrap;
-      margin-top: 2.5rem;
+      flex-direction: column;
+      gap: 2.2rem;
+      align-items: center;
     }
 
     .profile-card {
-      background: rgba(20, 0, 30, 0.65);
-      border-radius: 24px;
-      padding: 2.3rem 1.8rem;
-      text-align: center;
-      max-width: 340px;
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(218, 112, 214, 0.3);
-      box-shadow: 0 8px 20px rgba(139, 0, 139, 0.3);
-      opacity: 0;
-      transform: translateY(30px);
-      transition: all 0.5s ease;
-    }
-
-    /* Класс для запуска анимации */
-    .profile-card.animate {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .profile-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 12px 30px rgba(255, 105, 180, 0.65);
-      border-color: rgba(255, 105, 180, 0.6);
-    }
-
-    .profile-card h2 {
-      font-family: 'Dancing Script', cursive;
-      font-size: 2.5rem;
-      margin-bottom: 1.4rem;
-      background: linear-gradient(135deg, #ff9dc7, #d870db);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: 0 0 10px rgba(218, 112, 214, 0.5);
-    }
-
-    .profile-card .avatar {
-      width: 190px;
-      height: 190px;
-      object-fit: cover;
-      border-radius: 18px;
-      margin-bottom: 1.6rem;
-      border: 3px solid transparent;
-      background: linear-gradient(45deg, #ba55d3, #ff69b4);
-      padding: 4px;
-      box-shadow: 0 0 20px rgba(218, 112, 214, 0.8);
+      background: rgba(40, 15, 60, 0.65);
+      border-radius: 22px;
+      padding: 1.8rem 1.4rem;
+      width: 100%;
+      max-width: 300px;
+      backdrop-filter: blur(10px);
+      border: 2px solid transparent;
+      box-shadow: 
+        0 0 18px rgba(218, 112, 214, 0.3),
+        inset 0 0 12px rgba(255, 158, 201, 0.2);
       transition: all 0.4s ease;
-    }
-
-    .profile-card:hover .avatar {
-      box-shadow: 0 0 30px rgba(255, 105, 180, 1);
-      transform: scale(1.03);
-    }
-
-    .profile-card p {
-      font-size: 1.12rem;
-      line-height: 1.65;
-      color: #f8f0ff;
-      font-weight: 300;
-      margin-bottom: 1.8rem;
-      text-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
-    }
-
-    .telegram-icon {
-      display: inline-block;
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, #2ca5e0, #5ea9dd);
-      border-radius: 50%;
-      box-shadow: 0 0 18px rgba(94, 169, 221, 0.7);
-      animation: iconGlow 2.8s infinite alternate;
-      transition: all 0.35s ease;
       position: relative;
     }
 
-    .telegram-icon:hover {
-      transform: scale(1.12) rotate(5deg);
-      box-shadow: 0 0 28px rgba(44, 165, 224, 0.95);
+    .profile-card:hover,
+    .profile-card:focus {
+      transform: translateY(-6px);
+      box-shadow: 
+        0 0 25px rgba(255, 158, 201, 0.5),
+        inset 0 0 18px rgba(255, 158, 201, 0.3);
+      border-color: rgba(255, 158, 201, 0.6);
     }
 
-    .telegram-icon svg {
-      width: 32px;
-      height: 32px;
-      fill: white;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .profile-card img {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      box-shadow: 0 0 18px rgba(255, 158, 201, 0.6);
+      transition: all 0.4s ease;
     }
 
-    @keyframes iconGlow {
-      0%   { box-shadow: 0 0 14px rgba(94, 169, 221, 0.6); }
-      100% { box-shadow: 0 0 26px rgba(44, 165, 224, 0.9); }
+    .profile-card:hover img,
+    .profile-card:focus img {
+      border-color: #ff9ec9;
+      box-shadow: 0 0 28px rgba(255, 158, 201, 0.8);
+      transform: scale(1.04);
     }
 
-    @media (max-width: 768px) {
-      .profiles-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 2.8rem;
+    .name-badge {
+      font-family: 'Caveat', cursive;
+      font-size: 1.5rem;
+      color: #ffb6d9;
+      background: rgba(100, 20, 80, 0.4);
+      padding: 6px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      margin: 1rem 0 0.8rem;
+      letter-spacing: 0.8px;
+      text-shadow: 0 0 7px rgba(255, 182, 217, 0.6);
+      border: 1px solid rgba(255, 158, 201, 0.3);
+    }
+
+    .bio {
+      font-size: 1rem;
+      color: #f0e6ff;
+      line-height: 1.6;
+      margin-bottom: 1.3rem;
+      font-weight: 300;
+      padding: 0 0.5rem;
+    }
+
+    .telegram-btn {
+      display: block;
+      color: #ff9ec9;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.15rem;
+      padding: 10px 20px;
+      border-radius: 30px;
+      background: rgba(100, 20, 80, 0.3);
+      transition: all 0.3s;
+      border: 2px solid rgba(255, 158, 201, 0.4);
+      text-shadow: 0 0 6px rgba(255, 158, 201, 0.5);
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .telegram-btn:hover,
+    .telegram-btn:focus {
+      color: white;
+      background: rgba(182, 52, 194, 0.5);
+      border-color: #ff9ec9;
+      box-shadow: 0 0 16px rgba(255, 158, 201, 0.7);
+      transform: scale(1.04);
+    }
+
+    /* Только для десктопа: две колонки */
+    @media (min-width: 769px) {
+      .profiles {
+        flex-direction: row;
+        gap: 4rem;
       }
-      #start-screen h1 { font-size: 3rem; }
-      .profile-card .avatar { width: 170px; height: 170px; }
-    }
-
-    @media (max-width: 480px) {
-      #start-screen h1 { font-size: 2.4rem; }
-      #start-screen p { font-size: 1.15rem; }
-      .profile-card { padding: 2rem 1.4rem; max-width: 300px; }
-      .profile-card .avatar { width: 150px; height: 150px; }
-      .profile-card h2 { font-size: 2.2rem; }
+      .profile-card {
+        max-width: 280px;
+      }
+      .profile-card img {
+        width: 160px;
+        height: 160px;
+      }
+      .name-badge {
+        font-size: 1.6rem;
+      }
+      .intro-text {
+        font-size: 1.3rem;
+      }
+      #start-screen h1 {
+        font-size: 3.6rem;
+      }
+      #start-screen p {
+        font-size: 1.4rem;
+      }
     }
   </style>
 </head>
 <body>
 
-  <video id="background-video" autoplay muted loop playsinline>
-    <source src="HE.MP4" type="video/mp4">
-  </video>
   <div class="overlay"></div>
 
-  <div id="start-screen">
-    <h1>Сайт Двух Подружек</h1>
-    <p>Нажмите на экран, чтобы продолжить</p>
+  <div id="start-screen" class="container">
+    <h1>Алесия & Серафима</h1>
+    <p>Нажмите, чтобы открыть наше сердце 💖</p>
   </div>
 
-  <div id="main-content">
-    <div class="profiles-container">
-      <div class="profile-card" id="card1">
-        <h2>Алесия</h2>
-        <img src="ALESIA.jpg" alt="Алесия" class="avatar">
-        <p>Тестовое био Алесии. Здесь может быть любая информация — увлечения, мечты или просто дружеское приветствие!</p>
-        <a href="https://t.me/alesia_username" target="_blank" class="telegram-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.228l-1.157 5.883c-.074.378-.21.478-.566.311-1.363-.636-2.203-1.032-3.939-1.846-1.548-.725-.786-.554.167.028l.594.364c.25.153.545.29.884.413.339.123.622.25.848.38.226.13.395.298.507.503.112.205.168.478.168.819v.324c0 .34-.056.614-.168.819-.112.205-.281.373-.507.503-.226.13-.509.257-.848.38-.339.123-.634.261-.884.413l-.594.364c-.953.582-1.715.411-.167-.311 1.736-.814 2.576-1.21 3.939-1.846.356-.167.492-.267.566-.645l1.157-5.883c.029-.148.098-.245.207-.291.109-.046.248-.023.417.069.169.092.307.223.415.393.108.17.162.362.162.576 0 .214-.054.406-.162.576-.108.17-.246.301-.415.393-.169.092-.308.115-.417.069-.109-.046-.178-.143-.207-.291z"/>
-          </svg>
-        </a>
+  <div id="main-content" class="container">
+    <p class="intro-text">
+     Мы — Алесия и Серафима.
+     Две подруги, которых объединили искусство, игры и мечты. 
+     Мы любим узнавать новых людей, общаться, делиться вдохновением и просто смеяться вместе. 
+     Если ты ищешь лёгкое общение, творчество или компанию для игр и разговоров до утра — добро пожаловать в наш мир    </p>
+
+    <div class="profiles">
+      <div class="profile-card">
+        <img src="ALESIA.jpg" alt="Алесия">
+        <div class="name-badge">Алесия</div>
+        <div class="bio">
+          Алесия, 17 лет. Программист, который видит поэзию даже в строках кода, и художник, умеющий переносить мечты на бумагу. Я романтик, живущий             на стыке логики и фантазии: где цифры превращаются в истории, а краски — в чувства. Люблю искать красоту в мелочах и верю, что каждый день — это шанс нарисовать новый мир.
+        </div>
+        <a href="https://t.me/AlesiaBity" target="_blank" class="telegram-btn">@AlesiaBity</a>
       </div>
 
-      <div class="profile-card" id="card2">
-        <h2>Серафима</h2>
-        <img src="SERAFIMA.jpg" alt="Серафима" class="avatar">
-        <p>Тестовое био Серафимы. Это место для её личной информации — хобби, цитаты или история дружбы!</p>
-        <a href="https://t.me/serafima_username" target="_blank" class="telegram-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.228l-1.157 5.883c-.074.378-.21.478-.566.311-1.363-.636-2.203-1.032-3.939-1.846-1.548-.725-.786-.554.167.028l.594.364c.25.153.545.29.884.413.339.123.622.25.848.38.226.13.395.298.507.503.112.205.168.478.168.819v.324c0 .34-.056.614-.168.819-.112.205-.281.373-.507.503-.226.13-.509.257-.848.38-.339.123-.634.261-.884.413l-.594.364c-.953.582-1.715.411-.167-.311 1.736-.814 2.576-1.21 3.939-1.846.356-.167.492-.267.566-.645l1.157-5.883c.029-.148.098-.245.207-.291.109-.046.248-.023.417.069.169.092.307.223.415.393.108.17.162.362.162.576 0 .214-.054.406-.162.576-.108.17-.246.301-.415.393-.169.092-.308.115-.417.069-.109-.046-.178-.143-.207-.291z"/>
-          </svg>
-        </a>
+      <div class="profile-card">
+        <img src="SERAFIMA.jpg" alt="Серафима">
+        <div class="name-badge">Серафима</div>
+        <div class="bio">
+          Серафима, 18 лет. Художник, который умеет ловить настроение мира в цвете и линии. Геймер, для которого виртуальные миры — не просто развлечение, а способ прожить ещё одну историю. Балансирую между холстом и монитором, между вдохновением и азартом, всегда ищу магию в мелочах.        </div>
+        <a href="https://t.me/NotYourAverageAngel" target="_blank" class="telegram-btn">@NotYourAverageAngel</a>
       </div>
     </div>
   </div>
 
   <script>
-    const startScreen = document.getElementById('start-screen');
-    const mainContent = document.getElementById('main-content');
-    const video = document.getElementById('background-video');
-    const body = document.body;
+    document.addEventListener('DOMContentLoaded', () => {
+      const start = document.getElementById('start-screen');
+      const main = document.getElementById('main-content');
 
-    function initSite() {
-      // Включаем звук видео
-      video.muted = false;
-      video.play().catch(e => console.warn("Звук не включился:", e));
-
-      // Скрываем стартовый экран
-      startScreen.style.opacity = '0';
-      setTimeout(() => {
-        startScreen.style.display = 'none';
-        mainContent.style.display = 'block';
-        
-        // Через короткую задержку — показываем карточки с анимацией
+      const handleClick = () => {
+        start.style.opacity = '0';
         setTimeout(() => {
-          mainContent.style.opacity = '1';
-          // Запускаем анимацию карточек
-          document.getElementById('card1').classList.add('animate');
+          start.style.display = 'none';
+          main.style.display = 'block';
           setTimeout(() => {
-            document.getElementById('card2').classList.add('animate');
-          }, 200);
-        }, 50);
-      }, 800);
+            main.style.opacity = '1';
+            main.style.transform = 'translateY(0)';
+          }, 50);
+        }, 500);
 
-      // Убираем обработчики
-      body.removeEventListener('click', initSite);
-      body.removeEventListener('touchstart', initSite);
-    }
+        document.body.removeEventListener('click', handleClick);
+        document.body.removeEventListener('touchstart', handleClick);
+      };
 
-    body.addEventListener('click', initSite);
-    body.addEventListener('touchstart', initSite, { passive: true });
+      // Поддержка касаний на мобильных
+      document.body.addEventListener('click', handleClick);
+      document.body.addEventListener('touchstart', handleClick, { passive: true });
+    });
   </script>
 </body>
 </html>
