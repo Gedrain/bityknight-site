@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Алесия & Серафима</title>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -23,191 +23,544 @@
       position: relative;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+      overflow-x: hidden;
     }
 
+    /* Анимированный оверлей с градиентом */
     .overlay {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, rgba(30, 5, 50, 0.85), rgba(10, 5, 30, 0.95));
-      z-index: -1;
+      background: linear-gradient(135deg, 
+        rgba(30, 5, 50, 0.88), 
+        rgba(60, 15, 80, 0.85), 
+        rgba(10, 5, 30, 0.92));
+      z-index: 1;
+      animation: gradientShift 15s ease infinite;
     }
+
+    @keyframes gradientShift {
+      0%, 100% { 
+        background: linear-gradient(135deg, 
+          rgba(30, 5, 50, 0.88), 
+          rgba(60, 15, 80, 0.85), 
+          rgba(10, 5, 30, 0.92)); 
+      }
+      50% { 
+        background: linear-gradient(135deg, 
+          rgba(60, 15, 80, 0.85), 
+          rgba(10, 5, 30, 0.92),
+          rgba(30, 5, 50, 0.88)); 
+      }
+    }
+
+    /* Плавающие частицы */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 158, 201, 0.6);
+      border-radius: 50%;
+      animation: float 20s infinite;
+      box-shadow: 0 0 10px rgba(255, 158, 201, 0.8);
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) translateX(0) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) translateX(100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 18s; }
+    .particle:nth-child(2) { left: 20%; animation-delay: 2s; animation-duration: 22s; }
+    .particle:nth-child(3) { left: 30%; animation-delay: 4s; animation-duration: 20s; }
+    .particle:nth-child(4) { left: 40%; animation-delay: 1s; animation-duration: 19s; }
+    .particle:nth-child(5) { left: 50%; animation-delay: 3s; animation-duration: 21s; }
+    .particle:nth-child(6) { left: 60%; animation-delay: 5s; animation-duration: 23s; }
+    .particle:nth-child(7) { left: 70%; animation-delay: 2.5s; animation-duration: 18s; }
+    .particle:nth-child(8) { left: 80%; animation-delay: 4.5s; animation-duration: 20s; }
 
     .container {
       width: 92%;
-      max-width: 900px;
-      padding: 1.8rem 1.2rem;
+      max-width: 1100px;
+      padding: 2rem 1.5rem;
       z-index: 10;
       text-align: center;
+      position: relative;
     }
 
     /* Начальный экран */
+    #start-screen {
+      animation: fadeIn 1.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
     #start-screen h1 {
       font-family: 'Caveat', cursive;
-      font-size: 2.8rem;
-      margin-bottom: 1rem;
+      font-size: clamp(2.2rem, 8vw, 4.5rem);
+      margin-bottom: 1.5rem;
       color: #ff9ec9;
-      letter-spacing: 0.5px;
-      animation: soft-glow 3s infinite alternate;
+      letter-spacing: 1px;
+      animation: titleGlow 3s ease-in-out infinite, floatTitle 4s ease-in-out infinite;
       text-shadow: 
-        0 0 10px rgba(255, 158, 201, 0.7),
-        0 0 20px rgba(218, 112, 214, 0.5);
+        0 0 20px rgba(255, 158, 201, 0.8),
+        0 0 40px rgba(218, 112, 214, 0.6),
+        0 0 60px rgba(255, 105, 180, 0.4);
+      position: relative;
+    }
+
+    #start-screen h1::before {
+      content: '✨';
+      position: absolute;
+      left: -50px;
+      animation: sparkle 2s ease-in-out infinite;
+    }
+
+    #start-screen h1::after {
+      content: '✨';
+      position: absolute;
+      right: -50px;
+      animation: sparkle 2s ease-in-out infinite 1s;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    @keyframes floatTitle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes titleGlow {
+      0%, 100% { 
+        text-shadow: 
+          0 0 20px rgba(255, 158, 201, 0.8),
+          0 0 40px rgba(218, 112, 214, 0.6); 
+      }
+      50% { 
+        text-shadow: 
+          0 0 30px rgba(255, 158, 201, 1),
+          0 0 60px rgba(218, 112, 214, 0.8),
+          0 0 90px rgba(255, 105, 180, 0.6); 
+      }
     }
 
     #start-screen p {
-      font-size: 1.25rem;
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
       color: #f0d9ff;
       font-weight: 300;
-      line-height: 1.5;
-      letter-spacing: 0.3px;
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 10px rgba(240, 217, 255, 0.5);
+      animation: pulse 2s ease-in-out infinite;
     }
 
-    @keyframes soft-glow {
-      from { text-shadow: 0 0 8px rgba(255, 158, 201, 0.6); }
-      to { text-shadow: 0 0 20px rgba(255, 158, 201, 1), 0 0 30px rgba(218, 112, 214, 0.7); }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
     }
 
     /* Основной контент */
     #main-content {
       display: none;
       opacity: 0;
-      transform: translateY(15px);
-      transition: opacity 1s ease, transform 1s ease;
+      transform: translateY(30px);
+      transition: opacity 1.2s ease, transform 1.2s ease;
+    }
+
+    #main-content.show {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .intro-text {
-      font-size: 1.15rem;
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
       color: #e6ccf5;
-      margin: 0 auto 2rem;
-      line-height: 1.6;
-      max-width: 650px;
+      margin: 0 auto 3rem;
+      line-height: 1.8;
+      max-width: 750px;
       font-weight: 300;
-      text-shadow: 0 0 5px rgba(230, 204, 245, 0.3);
+      text-shadow: 0 0 8px rgba(230, 204, 245, 0.4);
+      animation: fadeInUp 1s ease 0.3s both;
+      padding: 1.5rem;
+      background: rgba(60, 20, 80, 0.3);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 158, 201, 0.2);
+      backdrop-filter: blur(5px);
+    }
+
+    @keyframes fadeInUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(30px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
     }
 
     .profiles {
       display: flex;
       flex-direction: column;
-      gap: 2.2rem;
+      gap: 3rem;
       align-items: center;
+      padding: 1rem 0;
     }
 
     .profile-card {
-      background: rgba(40, 15, 60, 0.65);
-      border-radius: 22px;
-      padding: 1.8rem 1.4rem;
+      background: linear-gradient(145deg, 
+        rgba(60, 20, 80, 0.7), 
+        rgba(40, 15, 60, 0.6));
+      border-radius: 30px;
+      padding: 2.5rem 2rem;
       width: 100%;
-      max-width: 300px;
-      backdrop-filter: blur(10px);
+      max-width: 380px;
+      backdrop-filter: blur(15px);
       border: 2px solid transparent;
       box-shadow: 
-        0 0 18px rgba(218, 112, 214, 0.3),
-        inset 0 0 12px rgba(255, 158, 201, 0.2);
-      transition: all 0.4s ease;
+        0 10px 40px rgba(0, 0, 0, 0.4),
+        0 0 30px rgba(218, 112, 214, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 0 20px rgba(255, 158, 201, 0.1);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      overflow: hidden;
+      animation: cardAppear 0.8s ease both;
+    }
+
+    .profile-card:nth-child(1) { animation-delay: 0.5s; }
+    .profile-card:nth-child(2) { animation-delay: 0.7s; }
+
+    @keyframes cardAppear {
+      from { 
+        opacity: 0; 
+        transform: translateY(50px) scale(0.9); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+      }
+    }
+
+    .profile-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 158, 201, 0.1),
+        transparent
+      );
+      transform: rotate(45deg);
+      transition: all 0.6s ease;
+    }
+
+    .profile-card:hover::before {
+      animation: shimmer 1.5s ease;
+    }
+
+    @keyframes shimmer {
+      0% { transform: rotate(45deg) translateX(-100%); }
+      100% { transform: rotate(45deg) translateX(100%); }
     }
 
     .profile-card:hover,
     .profile-card:focus {
-      transform: translateY(-6px);
+      transform: translateY(-15px) scale(1.03);
       box-shadow: 
-        0 0 25px rgba(255, 158, 201, 0.5),
-        inset 0 0 18px rgba(255, 158, 201, 0.3);
-      border-color: rgba(255, 158, 201, 0.6);
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 50px rgba(255, 158, 201, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 0 30px rgba(255, 158, 201, 0.2);
+      border-color: rgba(255, 158, 201, 0.7);
+    }
+
+    .image-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 1.5rem;
+    }
+
+    .image-wrapper::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      background: linear-gradient(45deg, 
+        rgba(255, 158, 201, 0.4),
+        rgba(218, 112, 214, 0.4),
+        rgba(255, 105, 180, 0.4));
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      animation: rotate 8s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .profile-card:hover .image-wrapper::before {
+      opacity: 1;
     }
 
     .profile-card img {
-      width: 140px;
-      height: 140px;
+      width: 180px;
+      height: 180px;
       object-fit: cover;
       border-radius: 50%;
-      border: 3px solid transparent;
-      box-shadow: 0 0 18px rgba(255, 158, 201, 0.6);
-      transition: all 0.4s ease;
+      border: 4px solid rgba(255, 158, 201, 0.4);
+      box-shadow: 
+        0 0 30px rgba(255, 158, 201, 0.6),
+        inset 0 0 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 1;
     }
 
     .profile-card:hover img,
     .profile-card:focus img {
-      border-color: #ff9ec9;
-      box-shadow: 0 0 28px rgba(255, 158, 201, 0.8);
-      transform: scale(1.04);
+      border-color: rgba(255, 158, 201, 0.8);
+      box-shadow: 
+        0 0 50px rgba(255, 158, 201, 1),
+        0 0 100px rgba(218, 112, 214, 0.6),
+        inset 0 0 20px rgba(0, 0, 0, 0.3);
+      transform: scale(1.08) rotate(5deg);
     }
 
     .name-badge {
       font-family: 'Caveat', cursive;
-      font-size: 1.5rem;
+      font-size: clamp(1.4rem, 4vw, 1.8rem);
       color: #ffb6d9;
-      background: rgba(100, 20, 80, 0.4);
-      padding: 6px 16px;
-      border-radius: 20px;
+      background: linear-gradient(135deg, 
+        rgba(120, 40, 100, 0.6), 
+        rgba(80, 20, 80, 0.5));
+      padding: 10px 24px;
+      border-radius: 25px;
       display: inline-block;
-      margin: 1rem 0 0.8rem;
-      letter-spacing: 0.8px;
-      text-shadow: 0 0 7px rgba(255, 182, 217, 0.6);
-      border: 1px solid rgba(255, 158, 201, 0.3);
+      margin: 0 0 1.2rem;
+      letter-spacing: 1px;
+      text-shadow: 
+        0 0 10px rgba(255, 182, 217, 0.8),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(255, 158, 201, 0.4);
+      box-shadow: 
+        0 4px 15px rgba(255, 158, 201, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .name-badge::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+      transition: left 0.5s ease;
+    }
+
+    .profile-card:hover .name-badge::before {
+      left: 100%;
+    }
+
+    .profile-card:hover .name-badge {
+      transform: scale(1.05);
+      border-color: rgba(255, 158, 201, 0.7);
+      box-shadow: 
+        0 6px 20px rgba(255, 158, 201, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
     }
 
     .bio {
-      font-size: 1rem;
+      font-size: clamp(0.95rem, 2vw, 1.05rem);
       color: #f0e6ff;
-      line-height: 1.6;
-      margin-bottom: 1.3rem;
+      line-height: 1.8;
+      margin-bottom: 1.8rem;
       font-weight: 300;
       padding: 0 0.5rem;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     }
 
     .telegram-btn {
-      display: block;
+      display: inline-block;
       color: #ff9ec9;
       text-decoration: none;
       font-weight: 500;
-      font-size: 1.15rem;
-      padding: 10px 20px;
-      border-radius: 30px;
-      background: rgba(100, 20, 80, 0.3);
-      transition: all 0.3s;
-      border: 2px solid rgba(255, 158, 201, 0.4);
-      text-shadow: 0 0 6px rgba(255, 158, 201, 0.5);
-      width: fit-content;
-      margin: 0 auto;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      padding: 14px 32px;
+      border-radius: 50px;
+      background: linear-gradient(135deg, 
+        rgba(120, 40, 100, 0.5), 
+        rgba(80, 20, 80, 0.4));
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 2px solid rgba(255, 158, 201, 0.5);
+      text-shadow: 0 0 8px rgba(255, 158, 201, 0.6);
+      box-shadow: 
+        0 5px 20px rgba(255, 158, 201, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .telegram-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 158, 201, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+
+    .telegram-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .telegram-btn span {
+      position: relative;
+      z-index: 1;
     }
 
     .telegram-btn:hover,
     .telegram-btn:focus {
       color: white;
-      background: rgba(182, 52, 194, 0.5);
-      border-color: #ff9ec9;
-      box-shadow: 0 0 16px rgba(255, 158, 201, 0.7);
-      transform: scale(1.04);
+      background: linear-gradient(135deg, 
+        rgba(182, 52, 194, 0.7), 
+        rgba(255, 105, 180, 0.6));
+      border-color: rgba(255, 158, 201, 0.9);
+      box-shadow: 
+        0 8px 30px rgba(255, 158, 201, 0.6),
+        0 0 40px rgba(255, 158, 201, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      transform: translateY(-3px) scale(1.05);
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
     }
 
-    /* Только для десктопа: две колонки */
+    .telegram-btn:active {
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    /* Десктоп: две колонки */
     @media (min-width: 769px) {
       .profiles {
         flex-direction: row;
+        justify-content: center;
         gap: 4rem;
+        flex-wrap: wrap;
       }
+
       .profile-card {
-        max-width: 280px;
+        max-width: 400px;
       }
+
       .profile-card img {
-        width: 160px;
-        height: 160px;
+        width: 200px;
+        height: 200px;
       }
-      .name-badge {
-        font-size: 1.6rem;
+
+      #start-screen h1::before {
+        left: -70px;
       }
+
+      #start-screen h1::after {
+        right: -70px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 1300px;
+      }
+
+      .profiles {
+        gap: 5rem;
+      }
+    }
+
+    /* Адаптация для маленьких экранов */
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem 1rem;
+      }
+
+      .profile-card {
+        padding: 2rem 1.5rem;
+        max-width: 340px;
+      }
+
+      .profile-card img {
+        width: 150px;
+        height: 150px;
+      }
+
+      #start-screen h1::before,
+      #start-screen h1::after {
+        display: none;
+      }
+
       .intro-text {
-        font-size: 1.3rem;
+        padding: 1.2rem;
+        margin-bottom: 2rem;
       }
-      #start-screen h1 {
-        font-size: 3.6rem;
+    }
+
+    /* Улучшенная плавность для touch устройств */
+    @media (hover: none) {
+      .profile-card:active {
+        transform: scale(0.98);
       }
-      #start-screen p {
-        font-size: 1.4rem;
+
+      .telegram-btn:active {
+        transform: scale(0.95);
       }
     }
   </style>
@@ -215,6 +568,17 @@
 <body>
 
   <div class="overlay"></div>
+  
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
 
   <div id="start-screen" class="container">
     <h1>Алесия & Серафима</h1>
@@ -223,27 +587,33 @@
 
   <div id="main-content" class="container">
     <p class="intro-text">
-     Мы — Алесия и Серафима.
-     Две подруги, которых объединили искусство, игры и мечты. 
-     Мы любим узнавать новых людей, общаться, делиться вдохновением и просто смеяться вместе. 
-     Если ты ищешь лёгкое общение, творчество или компанию для игр и разговоров до утра — добро пожаловать в наш мир    </p>
+      Мы — Алесия и Серафима.
+      Две подруги, которых объединили искусство, игры и мечты. 
+      Мы любим узнавать новых людей, общаться, делиться вдохновением и просто смеяться вместе. 
+      Если ты ищешь лёгкое общение, творчество или компанию для игр и разговоров до утра — добро пожаловать в наш мир ✨
+    </p>
 
     <div class="profiles">
-      <div class="profile-card">
-        <img src="ALESIA.jpg" alt="Алесия">
+      <div class="profile-card" tabindex="0">
+        <div class="image-wrapper">
+          <img src="ALESIA.jpg" alt="Алесия">
+        </div>
         <div class="name-badge">Алесия</div>
         <div class="bio">
-          Алесия, 17 лет. Программист, который видит поэзию даже в строках кода, и художник, умеющий переносить мечты на бумагу. Я романтик, живущий             на стыке логики и фантазии: где цифры превращаются в истории, а краски — в чувства. Люблю искать красоту в мелочах и верю, что каждый день — это шанс нарисовать новый мир.
+          Алесия, 17 лет. Программист, который видит поэзию даже в строках кода, и художник, умеющий переносить мечты на бумагу. Я романтик, живущий на стыке логики и фантазии: где цифры превращаются в истории, а краски — в чувства. Люблю искать красоту в мелочах и верю, что каждый день — это шанс нарисовать новый мир.
         </div>
-        <a href="https://t.me/AlesiaBity" target="_blank" class="telegram-btn">Написать</a>
+        <a href="https://t.me/AlesiaBity" target="_blank" class="telegram-btn"><span>Написать</span></a>
       </div>
 
-      <div class="profile-card">
-        <img src="SERAFIMA.jpg" alt="Серафима">
+      <div class="profile-card" tabindex="0">
+        <div class="image-wrapper">
+          <img src="SERAFIMA.jpg" alt="Серафима">
+        </div>
         <div class="name-badge">Серафима</div>
         <div class="bio">
-          Серафима, 18 лет. Художник, который умеет ловить настроение мира в цвете и линии. Геймер, для которого виртуальные миры — не просто развлечение, а способ прожить ещё одну историю. Балансирую между холстом и монитором, между вдохновением и азартом, всегда ищу магию в мелочах.        </div>
-        <a href="https://t.me/NotYourAverageAngel" target="_blank" class="telegram-btn">Написать</a>
+          Серафима, 18 лет. Художник, который умеет ловить настроение мира в цвете и линии. Геймер, для которого виртуальные миры — не просто развлечение, а способ прожить ещё одну историю. Балансирую между холстом и монитором, между вдохновением и азартом, всегда ищу магию в мелочах.
+        </div>
+        <a href="https://t.me/NotYourAverageAngel" target="_blank" class="telegram-btn"><span>Написать</span></a>
       </div>
     </div>
   </div>
@@ -254,23 +624,32 @@
       const main = document.getElementById('main-content');
 
       const handleClick = () => {
+        start.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
         start.style.opacity = '0';
+        start.style.transform = 'scale(0.95)';
+        
         setTimeout(() => {
           start.style.display = 'none';
           main.style.display = 'block';
+          
           setTimeout(() => {
-            main.style.opacity = '1';
-            main.style.transform = 'translateY(0)';
+            main.classList.add('show');
           }, 50);
-        }, 500);
+        }, 800);
 
         document.body.removeEventListener('click', handleClick);
         document.body.removeEventListener('touchstart', handleClick);
       };
 
-      // Поддержка касаний на мобильных
       document.body.addEventListener('click', handleClick);
       document.body.addEventListener('touchstart', handleClick, { passive: true });
+
+      // Keyboard accessibility
+      document.body.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick();
+        }
+      });
     });
   </script>
 </body>
