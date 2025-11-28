@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GedRain Site</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff0055;
+            --neon-yellow: #fcee0a;
+            --neon-green: #0aff0a;
+            --dark-bg: #020204;
+            --panel-bg: rgba(10, 12, 16, 0.85);
+            --border-color: rgba(0, 243, 255, 0.3);
+            --scanline: rgba(0, 0, 0, 0.5);
+        }
+
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: var(--neon-blue);
+            font-family: 'Share Tech Mono', monospace;
+            overflow-x: hidden;
+            font-size: 16px;
+            height: 100vh;
+            width: 100vw;
+        }
+
+       
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 999;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.95; }
+            5% { opacity: 0.85; }
+            10% { opacity: 0.95; }
+            100% { opacity: 0.95; }
+        }
+
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-pink); border-radius: 2px; }
+
+        /* --- LAYOUT --- */
+        .main-wrapper {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: none; /* Hidden until loaded */
+        }
+
+        /* --- LOADER --- */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--neon-green);
+            font-family: 'Share Tech Mono';
+        }
+        .progress-bar {
+            width: 300px;
+            height: 4px;
+            background: #333;
+            margin-top: 20px;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--neon-green);
+            width: 0%;
+            transition: width 0.1s;
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+
+        /* --- TYPOGRAPHY & GLITCH --- */
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; }
+        
+        .glitch-text {
+            position: relative;
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 2px 2px var(--neon-pink), -2px -2px var(--neon-blue);
+            animation: glitch-skew 1s infinite linear alternate-reverse;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -1px 0 #ff00c1;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -1px 0 #00fff9;
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(12px, 9999px, 86px, 0); }
+            20% { clip: rect(84px, 9999px, 19px, 0); }
+            40% { clip: rect(35px, 9999px, 66px, 0); }
+            60% { clip: rect(10px, 9999px, 83px, 0); }
+            80% { clip: rect(69px, 9999px, 2px, 0); }
+            100% { clip: rect(54px, 9999px, 49px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            20% { clip: rect(3px, 9999px, 36px, 0); }
+            40% { clip: rect(22px, 9999px, 5px, 0); }
+            60% { clip: rect(88px, 9999px, 15px, 0); }
+            80% { clip: rect(42px, 9999px, 78px, 0); }
+            100% { clip: rect(11px, 9999px, 62px, 0); }
+        }
+
+        /* --- CYBER CARDS --- */
+        .cyber-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            padding: 25px;
+            position: relative;
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s, box-shadow 0.3s;
+            clip-path: polygon(
+                20px 0, 100% 0, 
+                100% calc(100% - 20px), 
+                calc(100% - 20px) 100%, 
+                0 100%, 
+                0 20px
+            );
+        }
+
+        .cyber-card:hover {
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            border-color: var(--neon-pink);
+        }
+
+        .card-header {
+            border-bottom: 2px solid var(--neon-blue);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            color: var(--neon-yellow);
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        /* --- DATA TABLES --- */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .tech-table th {
+            text-align: left;
+            padding: 12px;
+            color: var(--neon-blue);
+            border-bottom: 1px solid var(--neon-pink);
+            background: rgba(255, 0, 85, 0.1);
+        }
+        .tech-table td {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+            color: #ddd;
+        }
+        .tech-table tr:hover td {
+            background: rgba(0, 243, 255, 0.1);
+            color: #fff;
+            cursor: crosshair;
+        }
+        .time-cell {
+            color: var(--neon-yellow) !important;
+            font-weight: bold;
+        }
+
+        /* --- ASCII ART & SPECS --- */
+        .ascii-art {
+            font-family: monospace;
+            white-space: pre;
+            color: var(--neon-green);
+            font-size: 10px;
+            line-height: 10px;
+            opacity: 0.7;
+            margin-top: 10px;
+            overflow-x: hidden;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .spec-box {
+            border-left: 3px solid var(--neon-pink);
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+        }
+        .spec-label { font-size: 0.8rem; color: #888; }
+        .spec-val { font-size: 1.2rem; font-weight: bold; color: #fff; }
+
+        /* --- FOOTER --- */
+        .footer-status {
+            text-align: center;
+            margin-top: 50px;
+            border-top: 1px dashed var(--neon-blue);
+            padding-top: 20px;
+            padding-bottom: 50px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        /* --- DECORATIONS --- */
+        .deco-corner {
+            position: absolute;
+            width: 10px; height: 10px;
+            border: 2px solid var(--neon-blue);
+            background: transparent;
+        }
+        .top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
+        .bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
+
+    </style>
+</head>
+<body>
+
+    <div class="crt-overlay"></div>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="loader">
+        <div style="font-size: 2rem; margin-bottom: 10px;">INITIALIZING KERNEL...</div>
+        <div id="loader-text">LOADING ASSETS</div>
+        <div class="progress-bar"><div class="progress-fill" id="p-fill"></div></div>
+    </div>
+
+    <div class="main-wrapper" id="main-content">
+        
+        <header style="margin-bottom: 60px; padding-top: 40px;">
+            <div style="border-left: 5px solid var(--neon-pink); padding-left: 20px;">
+                <h1 class="glitch-text" data-text="Кейс #03">Кейс #03</h1>
+                <p style="color: var(--neon-green); margin-top: 10px;">> ЦЕЛЬ: РАЗРАБОТКА ТЕХНОЛОГИЧЕСКОГО ПРОЦЕССА // КЕЙС #03</p>
+                <p style="color: #666;">> SECURE CONNECTION: ENCRYPTED</p>
+            </div>
+        </header>
+
+        <section class="cyber-card">
+            <div class="deco-corner top-right"></div>
+            <div class="deco-corner bottom-left"></div>
+            <div class="card-header">
+                <h2 class="card-title">01 // ИСХОДНЫЕ ПАРАМЕТРЫ</h2>
+                <span style="color: var(--neon-pink)">[LOCKED]</span>
+            </div>
+            
+            <div class="spec-grid">
+                <div class="spec-box">
+                    <div class="spec-label">МАТЕРИАЛ</div>
+                    <div class="spec-val">СТАЛЬ 45</div>
+                </div>
+                <div class="spec-box">
+                    <div class="spec-label">ТОЛЩИНА ЗАГОТОВКИ</div>
+                    <div class="spec-val">4.0 MM</div>
+                </div>
+                <div class="spec-box">
+                    <div class="spec-label">СТЕРЖЕНЬ (ОСЬ)</div>
+                    <div class="spec-val">Ø 8.0 MM</div>
+                </div>
+                <div class="spec-box">
+                    <div class="spec-label">КЛАСС ТОЧНОСТИ</div>
+                    <div class="spec-val">±0.5 MM</div>
+                </div>
+            </div>
+            
+            <div class="ascii-art">
+      /\
+     /  \       ЧЕРТЕЖ МОДЕЛИ [WIREFRAME]
+    /    \      
+   /      \     СТАЛЬ 45 КОНСТРУКЦИОННАЯ
+  /   ()   \    ШАРНИРНОЕ СОЕДИНЕНИЕ
+ /    ||    \
+/     ||     \  ТВЕРДОСТЬ HRC 45-50
+^     ||     ^  (ПОСЛЕ ТЕРМООБРАБОТКИ)
+            </div>
+        </section>
+
+        <section class="cyber-card">
+            <div class="card-header">
+                <h2 class="card-title">02 // СПЕЦИФИКАЦИЯ РЕСУРСОВ</h2>
+                <div style="font-size: 0.8rem; color: var(--neon-green)">CALCULATION_COMPLETE</div>
+            </div>
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>КОМПОНЕНТ</th>
+                        <th>РАЗМЕРЫ (ММ)</th>
+                        <th>КОЛ-ВО</th>
+                        <th>ТИП ПРОКАТА</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ножка циркуля</td>
+                        <td>180 x 25 x 4</td>
+                        <td>2</td>
+                        <td>Лист / Полоса</td>
+                    </tr>
+                    <tr>
+                        <td>Ось шарнира</td>
+                        <td>Ø8 x 30</td>
+                        <td>1</td>
+                        <td>Пруток (Круг)</td>
+                    </tr>
+                    <tr>
+                        <td>Фиксатор (Гайка/Шайба)</td>
+                        <td>M8 (Стандарт)</td>
+                        <td>1</td>
+                        <td>Метизы</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="cyber-card" style="border-color: var(--neon-green);">
+            <div class="card-header">
+                <h2 class="card-title" style="color: var(--neon-green);">03 // ТЕХНОЛОГИЧЕСКАЯ КАРТА</h2>
+                <div class="blink" style="color: red;">RECORDING...</div>
+            </div>
+            
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>ОПЕРАЦИЯ</th>
+                        <th>ОБОРУДОВАНИЕ / ИНСТРУМЕНТ</th>
+                        <th>ВРЕМЯ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>01</td>
+                        <td>Подготовка и разметка</td>
+                        <td>Верстак, мет. линейка, чертилка, кернер, молоток</td>
+                        <td class="time-cell">15 мин</td>
+                    </tr>
+                    <tr>
+                        <td>02</td>
+                        <td>Резка заготовок</td>
+                        <td>Гильотина или УШМ (Болгарка), ножовка</td>
+                        <td class="time-cell">20 мин</td>
+                    </tr>
+                    <tr>
+                        <td>03</td>
+                        <td>Опиливание кромок (черновое)</td>
+                        <td>Тиски слесарные, напильники (драчевый, личной)</td>
+                        <td class="time-cell">30 мин</td>
+                    </tr>
+                    <tr>
+                        <td>04</td>
+                        <td>Сверление отверстий (Ось)</td>
+                        <td>Сверлильный станок 2М112, сверло Ø8мм, зенкер</td>
+                        <td class="time-cell">10 мин</td>
+                    </tr>
+                    <tr>
+                        <td>05</td>
+                        <td>Гибка ножек (Формовка)</td>
+                        <td>Тиски, оправка, газовая горелка (нагрев места гиба)</td>
+                        <td class="time-cell">15 мин</td>
+                    </tr>
+                    <tr>
+                        <td>06</td>
+                        <td>Заточка рабочих концов</td>
+                        <td>Заточной станок (ТШ-2), охлаждающая жидкость</td>
+                        <td class="time-cell">10 мин</td>
+                    </tr>
+                    <tr>
+                        <td>07</td>
+                        <td>Термообработка (Закалка + Отпуск)</td>
+                        <td>Муфельная печь (840°C), масло/вода. Твердомер.</td>
+                        <td class="time-cell">45 мин</td>
+                    </tr>
+                    <tr>
+                        <td>08</td>
+                        <td>Сборка и шлифовка</td>
+                        <td>Клепальный молоток или ключи, шкурка, паста ГОИ</td>
+                        <td class="time-cell">25 мин</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 15px; text-align: right; color: var(--neon-blue);">
+                ОБЩЕЕ ВРЕМЯ ЦИКЛА: <span style="font-size: 1.5rem; color: #fff;">170 МИН</span>
+            </div>
+        </section>
+
+        <section class="cyber-card" style="border-color: var(--neon-yellow);">
+            <div class="card-header">
+                <h2 class="card-title" style="color: var(--neon-yellow);">04 // КОНТРОЛЬ КАЧЕСТВА (QC)</h2>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <ul style="list-style: none;">
+                        <li style="margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                            <span style="color: var(--neon-pink)">[CRITICAL]</span> Сходимость губок: <span style="float: right">0.0 мм</span>
+                        </li>
+                        <li style="margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                            <span style="color: var(--neon-blue)">[NORMAL]</span> Длина ножек: <span style="float: right">180 ±0.5 мм</span>
+                        </li>
+                        <li style="margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                            <span style="color: var(--neon-blue)">[NORMAL]</span> Твердость острия: <span style="float: right">45-50 HRC</span>
+                        </li>
+                        <li style="margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                            <span style="color: var(--neon-yellow)">[CHECK]</span> Плавность хода шарнира: <span style="float: right">Без люфта</span>
+                        </li>
+                    </ul>
+                </div>
+                <div style="flex: 1; background: #111; padding: 10px; border: 1px dashed #444; color: #888; font-size: 0.8rem;">
+                    // SYSTEM LOG:<br>
+                    > Проверить отсутствие трещин после закалки.<br>
+                    > Убедиться в соосности отверстий.<br>
+                    > Антикоррозийная обработка маслом обязательна.<br>
+                    > Статус партии: ГОТОВ К ПРОИЗВОДСТВУ.
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer-status">
+            <div>Все права защищены мной и только мной</div>
+            <div>Создатель : https://github.com/Gedrain</div>
+            <div style="margin-top: 10px; color: var(--neon-pink);">DO NOT DISCONNECT</div>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- LOADER LOGIC ---
+        const loader = document.getElementById('loader');
+        const fill = document.getElementById('p-fill');
+        const main = document.getElementById('main-content');
+        const texts = ["LOADING KERNEL...", "MOUNTING DRIVES...", "DECRYPTING DATA...", "ACCESS GRANTED"];
+        
+        let progress = 0;
+        let textIdx = 0;
+        const txtDiv = document.getElementById('loader-text');
+
+        const loadInterval = setInterval(() => {
+            progress += Math.random() * 5;
+            if(progress > 100) progress = 100;
+            fill.style.width = progress + "%";
+            
+            if(progress > 25 && textIdx === 0) { txtDiv.innerText = texts[1]; textIdx++; }
+            if(progress > 50 && textIdx === 1) { txtDiv.innerText = texts[2]; textIdx++; }
+            if(progress > 85 && textIdx === 2) { txtDiv.innerText = texts[3]; txtDiv.style.color = "#0aff0a"; textIdx++; }
+
+            if(progress === 100) {
+                clearInterval(loadInterval);
+                setTimeout(() => {
+                    loader.style.opacity = 0;
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                        main.style.display = 'block';
+                        // Trigger simple entrance anim
+                        main.style.animation = "flicker 0.5s";
+                    }, 500);
+                }, 800);
+            }
+        }, 50);
+
+        // --- MATRIX RAIN / GRID BACKGROUND ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const chars = "010101XYZ_SYSTEM_45";
+        const drops = [];
+        const fontSize = 14;
+        const columns = width / fontSize;
+
+        for(let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100; // start above screen randomly
+        }
+
+        // Perspective Grid Variables
+        let offset = 0;
+
+        function draw() {
+            // Semi-transparent black to create trails
+            ctx.fillStyle = "rgba(2, 2, 4, 0.1)";
+            ctx.fillRect(0, 0, width, height);
+
+            // 1. MATRIX RAIN CODE
+            ctx.fillStyle = "#00f3ff"; // Neon Blue Text
+            ctx.font = fontSize + "px monospace";
+
+            for(let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                
+                // Randomly glitch color
+                if(Math.random() > 0.98) ctx.fillStyle = "#ff0055";
+                else ctx.fillStyle = "rgba(0, 243, 255, 0.3)";
+
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if(drops[i] * fontSize > height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+
+            // 2. PERSPECTIVE GRID (RETROWAVE STYLE)
+            ctx.strokeStyle = "rgba(255, 0, 85, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            // Horizontal moving lines
+            offset = (offset + 0.5) % 40;
+            for(let y = height/2; y < height; y += 40) {
+                let yPos = y + offset;
+                if (yPos > height) yPos -= (height/2); 
+                
+                ctx.moveTo(0, yPos);
+                ctx.lineTo(width, yPos);
+            }
+
+            // Vertical perspective lines
+            const centerX = width / 2;
+            const centerY = height / 2; // Horizon
+            for(let x = -width; x < width * 2; x += 100) {
+                 ctx.moveTo(x, height);
+                 ctx.lineTo(centerX, centerY);
+            }
+            ctx.stroke();
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        // --- DECODER TEXT EFFECT ON HOVER ---
+        const hackText = document.querySelectorAll('h2, .spec-val');
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+        hackText.forEach(element => {
+            element.addEventListener('mouseover', event => {
+                let iterations = 0;
+                const originalText = event.target.innerText;
+                
+                const interval = setInterval(() => {
+                    event.target.innerText = event.target.innerText.split("")
+                        .map((letter, index) => {
+                            if(index < iterations) {
+                                return originalText[index];
+                            }
+                            return letters[Math.floor(Math.random() * 26)];
+                        })
+                        .join("");
+                    
+                    if(iterations >= originalText.length){ 
+                        clearInterval(interval);
+                        event.target.innerText = originalText;
+                    }
+                    
+                    iterations += 1/3;
+                }, 30);
+            });
+        });
+
+    </script>
+</body>
+</html>
