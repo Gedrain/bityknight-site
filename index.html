@@ -68,17 +68,16 @@
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: var(--neon-pink); border-radius: 2px; }
 
-        /* --- LAYOUT --- */
         .main-wrapper {
             position: relative;
             z-index: 10;
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            display: none; /* Hidden until loaded */
+            display: none; 
         }
 
-        /* --- LOADER --- */
+    
         #loader {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -106,7 +105,7 @@
             box-shadow: 0 0 10px var(--neon-green);
         }
 
-        /* --- TYPOGRAPHY & GLITCH --- */
+     
         h1, h2, h3 { font-family: 'Orbitron', sans-serif; text-transform: uppercase; }
         
         .glitch-text {
@@ -155,7 +154,7 @@
             100% { clip: rect(11px, 9999px, 62px, 0); }
         }
 
-        /* --- CYBER CARDS --- */
+      
         .cyber-card {
             background: var(--panel-bg);
             border: 1px solid var(--border-color);
@@ -193,7 +192,7 @@
             letter-spacing: 2px;
         }
 
-        /* --- DATA TABLES --- */
+  
         .tech-table {
             width: 100%;
             border-collapse: collapse;
@@ -221,7 +220,7 @@
             font-weight: bold;
         }
 
-        /* --- ASCII ART & SPECS --- */
+  
         .ascii-art {
             font-family: monospace;
             white-space: pre;
@@ -246,7 +245,7 @@
         .spec-label { font-size: 0.8rem; color: #888; }
         .spec-val { font-size: 1.2rem; font-weight: bold; color: #fff; }
 
-        /* --- FOOTER --- */
+ 
         .footer-status {
             text-align: center;
             margin-top: 50px;
@@ -257,7 +256,6 @@
             opacity: 0.6;
         }
 
-        /* --- DECORATIONS --- */
         .deco-corner {
             position: absolute;
             width: 10px; height: 10px;
@@ -478,7 +476,7 @@
     </div>
 
     <script>
-        // --- LOADER LOGIC ---
+    
         const loader = document.getElementById('loader');
         const fill = document.getElementById('p-fill');
         const main = document.getElementById('main-content');
@@ -504,14 +502,14 @@
                     setTimeout(() => {
                         loader.style.display = 'none';
                         main.style.display = 'block';
-                        // Trigger simple entrance anim
+                
                         main.style.animation = "flicker 0.5s";
                     }, 500);
                 }, 800);
             }
         }, 50);
 
-        // --- MATRIX RAIN / GRID BACKGROUND ---
+
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
 
@@ -529,25 +527,25 @@
         const columns = width / fontSize;
 
         for(let i = 0; i < columns; i++) {
-            drops[i] = Math.random() * -100; // start above screen randomly
+            drops[i] = Math.random() * -100;
         }
 
-        // Perspective Grid Variables
+  
         let offset = 0;
 
         function draw() {
-            // Semi-transparent black to create trails
+        
             ctx.fillStyle = "rgba(2, 2, 4, 0.1)";
             ctx.fillRect(0, 0, width, height);
 
-            // 1. MATRIX RAIN CODE
-            ctx.fillStyle = "#00f3ff"; // Neon Blue Text
+          
+            ctx.fillStyle = "#00f3ff"; 
             ctx.font = fontSize + "px monospace";
 
             for(let i = 0; i < drops.length; i++) {
                 const text = chars[Math.floor(Math.random() * chars.length)];
                 
-                // Randomly glitch color
+         
                 if(Math.random() > 0.98) ctx.fillStyle = "#ff0055";
                 else ctx.fillStyle = "rgba(0, 243, 255, 0.3)";
 
@@ -559,12 +557,12 @@
                 drops[i]++;
             }
 
-            // 2. PERSPECTIVE GRID (RETROWAVE STYLE)
+     
             ctx.strokeStyle = "rgba(255, 0, 85, 0.15)";
             ctx.lineWidth = 1;
             ctx.beginPath();
             
-            // Horizontal moving lines
+       
             offset = (offset + 0.5) % 40;
             for(let y = height/2; y < height; y += 40) {
                 let yPos = y + offset;
@@ -574,9 +572,9 @@
                 ctx.lineTo(width, yPos);
             }
 
-            // Vertical perspective lines
+     
             const centerX = width / 2;
-            const centerY = height / 2; // Horizon
+            const centerY = height / 2;
             for(let x = -width; x < width * 2; x += 100) {
                  ctx.moveTo(x, height);
                  ctx.lineTo(centerX, centerY);
@@ -588,7 +586,7 @@
 
         draw();
 
-        // --- DECODER TEXT EFFECT ON HOVER ---
+    
         const hackText = document.querySelectorAll('h2, .spec-val');
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -620,3 +618,4 @@
     </script>
 </body>
 </html>
+
