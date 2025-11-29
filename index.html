@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0a0010">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>NekoChat v17 // Mobile UI</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NekoChat v17.2 // Roles</title>
     
     <!-- LIBRARIES -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,12 +46,6 @@
             height: 100vh; height: -webkit-fill-available;
         }
 
-        /* MOBILE SCALING FIX */
-        @media (max-width: 768px) {
-            body { font-size: 14px; } /* Чуть меньше шрифт */
-            .glass-panel { border-radius: 0 !important; border: none !important; }
-        }
-
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
@@ -82,7 +77,8 @@
         }
         button.btn:active { background: var(--primary); color: #fff; transform: scale(0.96); }
         button.btn-danger { border-color: var(--danger); color: var(--danger); background: rgba(255,0,85,0.1); }
-        button.btn-danger:active { background: var(--danger); color: #fff; }
+        button.btn-success { border-color: var(--success); color: var(--success); background: rgba(0,255,153,0.1); }
+        button.btn-warn { border-color: var(--warning); color: var(--warning); background: rgba(255, 204, 0, 0.1); }
 
         input, textarea {
             width: 100%; padding: 12px 16px; margin-bottom: 12px;
@@ -91,66 +87,45 @@
         }
         input:focus { border-color: var(--secondary); }
 
-        /* --- MAIN LAYOUT (RESPONSIVE) --- */
+        /* --- MAIN LAYOUT --- */
         #view-main {
             width: 100%; height: 100%; max-width: 1400px;
-            display: grid; 
-            /* Desktop: Sidebar + Content */
-            grid-template-columns: 80px 1fr;
+            display: grid; grid-template-columns: 80px 1fr;
             background: rgba(0,0,0,0.2);
         }
 
-        /* MOBILE LAYOUT CHANGE */
         @media (max-width: 768px) {
-            #view-main { 
-                display: block; /* Stack layout */
-                position: relative;
-            }
-            
-            /* Sidebar is now a drawer */
+            #view-main { display: block; position: relative; }
             .sidebar {
                 position: absolute; top: 0; left: 0; height: 100%; width: 240px;
                 background: rgba(10, 5, 15, 0.98); border-right: 1px solid var(--primary);
                 z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease;
-                padding-top: 60px; /* Space for close button */
-                box-shadow: 10px 0 50px rgba(0,0,0,0.8);
+                padding-top: 60px; box-shadow: 10px 0 50px rgba(0,0,0,0.8);
             }
             .sidebar.open { transform: translateX(0); }
-            
-            /* Add close button inside sidebar for mobile */
             .sidebar-close {
                 position: absolute; top: 15px; right: 15px; font-size: 1.5rem; color: var(--danger);
                 display: block !important; cursor: pointer;
             }
-
-            /* Content takes full width */
             .content { height: 100%; width: 100%; }
-            
-            /* Adjust header for mobile */
-            .header { padding-left: 10px; }
             .mobile-menu-btn { display: block !important; font-size: 1.5rem; color: var(--secondary); padding: 10px; cursor: pointer; }
         }
 
-        /* Desktop Sidebar Styles */
         .sidebar {
             background: rgba(0,0,0,0.6); border-right: 1px solid var(--border);
             padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
-        .sidebar-close { display: none; } /* Hidden on desktop */
-        .mobile-menu-btn { display: none; } /* Hidden on desktop */
+        .sidebar-close { display: none; }
+        .mobile-menu-btn { display: none; }
 
         .nav-item {
             font-size: 1.4rem; color: var(--dim); cursor: pointer; transition: 0.2s;
             width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 14px;
-            /* Mobile adjustment */
             @media (max-width: 768px) { width: 80%; justify-content: flex-start; padding-left: 20px; font-size: 1.2rem; gap: 15px; }
         }
         .nav-text { display: none; @media (max-width: 768px) { display: inline; font-size: 1rem; } }
-        
-        .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
         .nav-item.active { color: var(--secondary); background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.3); }
 
-        /* CONTENT & TABS */
         .content { position: relative; overflow: hidden; display: flex; flex-direction: column; }
         .tab-pane { flex: 1; display: none; flex-direction: column; height: 100%; }
         .tab-pane.active { display: flex; animation: fadeUp 0.3s ease; }
@@ -165,9 +140,9 @@
         .header-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         .header-title { font-weight: 700; color: var(--secondary); letter-spacing: 1px; font-size: 1.1rem; }
 
-        /* CHAT MESSAGES */
+        /* LISTS & CHAT */
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { display: flex; gap: 10px; max-width: 95%; position: relative; } /* Шире на мобилках */
+        .msg { display: flex; gap: 10px; max-width: 95%; position: relative; }
         .msg.mine { align-self: flex-end; flex-direction: row-reverse; }
         
         .avatar { width: 38px; height: 38px; border-radius: 10px; background: #000; object-fit: cover; flex-shrink: 0; border: 1px solid #333; }
@@ -177,51 +152,71 @@
             border-top-left-radius: 4px; color: #eee; font-size: 1rem; line-height: 1.4;
             min-width: 60px; position: relative; word-wrap: break-word;
         }
-        .msg.mine .bubble { 
-            background: rgba(176, 38, 255, 0.2); border: 1px solid var(--primary);
-            border-top-left-radius: 16px; border-top-right-radius: 4px; color: #fff;
+        .msg.mine .bubble { background: rgba(176, 38, 255, 0.2); border: 1px solid var(--primary); border-top-left-radius: 16px; border-top-right-radius: 4px; color: #fff; }
+        
+        /* ADMIN MSG STYLES */
+        .msg.admin .bubble, .msg.super .bubble {
+            border: 1px solid var(--danger);
+            background: rgba(255, 0, 85, 0.15);
+            color: #fff;
         }
+        .msg.admin .msg-sender, .msg.super .msg-sender { color: var(--danger); text-shadow: 0 0 5px var(--danger); }
+
         .msg-sender { font-weight: 700; color: var(--secondary); font-size: 0.75rem; margin-bottom: 3px; display: block; }
         .msg-img { max-width: 100%; border-radius: 8px; margin-top: 5px; border: 1px solid var(--border); }
 
-        /* INPUT BAR */
-        .input-bar {
-            padding: 10px; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.08);
-            display: flex; gap: 10px; align-items: center;
-        }
-        .input-bar input { margin: 0; padding: 12px 18px; border-radius: 30px; border-color: transparent; background: rgba(255,255,255,0.1); flex: 1; }
+        /* ROLE BADGES */
+        .role-badge { font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; margin-left: 5px; vertical-align: middle; color: #000; font-weight: bold; }
+        .role-super { background: #fff; }
+        .role-admin { background: var(--danger); color: #fff; }
+        .role-tester { background: var(--warning); }
+        .role-user { background: var(--success); }
 
-        /* CUSTOM ALERTS */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200;
-            display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        .input-bar { padding: 10px; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; align-items: center; }
+        .input-bar input { margin: 0; padding: 10px 15px; border-radius: 25px; border-color: transparent; background: rgba(255,255,255,0.1); flex: 1; }
+
+        .list-item { 
+            padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); 
+            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s;
+            background: rgba(255,255,255,0.02); margin-bottom: 5px; border-radius: 12px; position: relative;
         }
+        .list-item:active { background: rgba(176, 38, 255, 0.1); }
+        .list-actions { margin-left: auto; z-index: 5; padding: 10px; }
+
+        /* ADMIN CARDS */
+        .admin-user-card {
+            background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px;
+            border: 1px solid transparent; display: flex; flex-direction: column; gap: 10px;
+        }
+        .admin-user-card:hover { border-color: var(--primary); background: rgba(176,38,255,0.05); }
+        .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; }
+
+        /* ALERTS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
         .modal-content { width: 90%; max-width: 320px; text-align: center; padding: 25px; border: 1px solid var(--primary); }
         .confirm-title { font-size: 1.2rem; color: var(--secondary); font-weight: bold; margin-bottom: 10px; }
 
-        /* TOASTS */
         #toast-container { position: fixed; top: 20px; right: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { 
-            background: rgba(10,5,15,0.95); border: 1px solid var(--border); border-left: 4px solid var(--primary); 
-            padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 15px; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.3s ease; pointer-events: all;
-        }
+        .toast { background: rgba(10,5,15,0.95); border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.3s ease; pointer-events: all; }
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* LOADER */
-        #loader {
-            position: fixed; inset: 0; background: #05000a; z-index: 9999;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            color: var(--primary); transition: opacity 0.8s;
+        #loader { position: fixed; inset: 0; background: #05000a; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: var(--primary); transition: opacity 0.8s; }
+        
+        .msg-actions {
+            position: absolute; top: -10px; right: 0; background: #000; border: 1px solid var(--primary);
+            border-radius: 8px; padding: 2px 6px; display: flex; gap: 8px; opacity: 0; transition: 0.2s;
         }
+        .msg:hover .msg-actions { opacity: 1; }
+        .msg.mine .msg-actions { right: auto; left: 0; }
+        .action-icon { font-size: 0.8rem; cursor: pointer; color: #aaa; }
+        .action-icon:hover { color: #fff; }
     </style>
 </head>
 <body>
 
     <div id="toast-container"></div>
 
-    <!-- UI ALERTS -->
     <div id="custom-confirm" class="modal-overlay">
         <div class="modal-content glass-panel">
             <div id="confirm-title" class="confirm-title">CONFIRM</div>
@@ -241,15 +236,14 @@
         </div>
     </div>
 
-    <!-- LOADER -->
     <div id="loader">
         <i class="fas fa-cat fa-4x fa-spin" style="margin-bottom: 20px; color:var(--secondary); text-shadow: 0 0 20px var(--secondary);"></i>
-        <div style="font-weight:700; letter-spacing:4px; font-size: 1.2rem;">NEKO OS v17</div>
-        <div style="color:var(--dim); margin-top:10px; font-size:0.8rem;">LOADING CORE...</div>
+        <div style="font-weight:700; letter-spacing:4px; font-size: 1.2rem;">NEKO CORE v17.2</div>
+        <div style="color:var(--dim); margin-top:10px; font-size:0.8rem;">LOADING MODULES...</div>
     </div>
 
-    <!-- AUTH -->
     <div id="app-root">
+        
         <div id="view-auth" class="glass-panel hidden" style="width:90%; max-width:350px; padding:40px 30px; text-align:center;">
             <h1 style="color:var(--primary); font-size: 2.5rem; margin:0;">NEKO ID</h1>
             <p style="color:var(--secondary); font-size:0.9rem; margin-bottom:30px;">MOBILE UPLINK</p>
@@ -263,10 +257,8 @@
             </div>
         </div>
 
-        <!-- MAIN INTERFACE -->
         <div id="view-main" class="hidden" style="width:100%; height:100%;">
             
-            <!-- MOBILE SIDEBAR (DRAWER) -->
             <div id="sidebar" class="sidebar">
                 <div class="sidebar-close" onclick="UI.toggleMenu()"><i class="fas fa-times"></i></div>
                 <div style="margin-bottom:20px; font-weight:bold; color:var(--primary); font-size:1.5rem;">MENU</div>
@@ -282,16 +274,12 @@
                 <div class="nav-item" style="color:var(--danger);" onclick="Auth.logout()"><i class="fas fa-power-off"></i> <span class="nav-text">EXIT</span></div>
             </div>
 
-            <!-- CONTENT WRAPPER -->
             <div class="content" style="height:100%; width:100%;">
                 
-                <!-- NEWS -->
                 <div id="tab-news" class="tab-pane active">
                     <div class="header">
                         <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content">
-                            <div class="header-title" style="color:var(--warning);">NEWS FEED</div>
-                        </div>
+                        <div class="header-content"><div class="header-title" style="color:var(--warning);">NEWS FEED</div></div>
                     </div>
                     <div id="news-feed" class="messages"></div>
                     <div id="news-input" class="input-bar hidden">
@@ -300,7 +288,6 @@
                     </div>
                 </div>
 
-                <!-- CHANNELS -->
                 <div id="tab-channels" class="tab-pane">
                     <div class="header">
                         <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
@@ -312,7 +299,6 @@
                     <div id="channel-list" style="overflow-y:auto; flex:1; padding:10px;"></div>
                 </div>
 
-                <!-- CHAT -->
                 <div id="tab-chat" class="tab-pane">
                     <div class="header">
                         <div style="display:flex; align-items:center; gap:10px;">
@@ -329,7 +315,6 @@
                     </div>
                 </div>
 
-                <!-- DMS -->
                 <div id="tab-dms" class="tab-pane">
                     <div class="header">
                         <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
@@ -338,7 +323,6 @@
                     <div id="dm-list" style="overflow-y:auto; flex:1; padding:10px;"></div>
                 </div>
 
-                <!-- SEARCH -->
                 <div id="tab-search" class="tab-pane">
                     <div class="header">
                         <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
@@ -350,7 +334,6 @@
                     <div id="search-results" style="overflow-y:auto; flex:1; padding:10px;"></div>
                 </div>
 
-                <!-- PROFILE -->
                 <div id="tab-profile" class="tab-pane">
                     <div class="header">
                         <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
@@ -368,7 +351,6 @@
                     </div>
                 </div>
 
-                <!-- ADMIN -->
                 <div id="tab-admin" class="tab-pane">
                     <div class="header">
                         <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
@@ -468,7 +450,6 @@
             toggleMenu: () => document.getElementById('sidebar').classList.toggle('open')
         };
 
-        // 3D SCENE
         const Scene = {
             init: () => {
                 const scene = new THREE.Scene();
@@ -543,11 +524,11 @@
                         db.ref('users/'+c.user.uid).set({displayName:n, email:e, avatar:`https://robohash.org/${c.user.uid}`, shortId:sid, role:'user'});
                         UI.alert("SUCCESS", "Account Created!");
                     }).catch(err=>UI.alert("ERROR", err.message));
-                } else auth.signInWithEmailAndPassword(e,p).catch(err=>UI.alert("ERROR", err.message));
+                } else auth.signInWithEmailAndPassword(e,p).catch(err=>UI.alert("LOGIN FAILED", err.message));
             },
             reset: () => {
                 const e = document.getElementById('auth-email').value;
-                if(e) UI.confirm("RESET", "Send reset link?", () => auth.sendPasswordResetEmail(e).then(()=>UI.toast("Sent", "success")));
+                if(e) UI.confirm("RESET", "Send reset link?", () => auth.sendPasswordResetEmail(e).then(()=>UI.toast("Link Sent", "success")));
                 else UI.toast("Enter Email", "error");
             },
             logout: () => auth.signOut().then(()=>location.reload())
@@ -556,13 +537,10 @@
         window.Route = (t) => {
             document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
             document.querySelectorAll('.tab-pane').forEach(e=>e.classList.remove('active'));
-            
-            // Highlight nav
             const map = {'news':0,'channels':1,'dms':2,'search':3,'profile':4,'admin':5};
             if(document.querySelectorAll('.nav-item')[map[t]]) document.querySelectorAll('.nav-item')[map[t]].classList.add('active');
-
             document.getElementById('tab-'+t).classList.add('active');
-            document.getElementById('sidebar').classList.remove('open'); // Auto close menu
+            document.getElementById('sidebar').classList.remove('open'); 
             if(t==='dms') Chat.loadDMs();
         };
 
@@ -581,44 +559,13 @@
                 const push = (img) => {
                     State.chatRef.push({
                         uid: State.user.uid, user: State.profile.displayName, avatar: State.profile.avatar, role: State.profile.role,
-                        text: txt, image: img, ts: firebase.database.ServerValue.TIMESTAMP, shortId: State.profile.shortId
+                        text: txt, image: img||null, ts: firebase.database.ServerValue.TIMESTAMP, shortId: State.profile.shortId
                     });
                     document.getElementById(id).value = ''; document.getElementById('file-in').value = '';
                 };
-                if(file) resize(file, 1024, push); else push(null); // High Quality for mobile
+                if(file) resize(file, 1024, push); else push(null); 
             },
-            listen: (ref, el) => {
-                if(State.chatRef) State.chatRef.off(); State.chatRef = ref;
-                const box = document.getElementById(el); box.innerHTML = '';
-                ref.limitToLast(50).on('child_added', s => {
-                    const d = s.val(), k = s.key;
-                    const mine = d.uid === State.user.uid;
-                    const div = document.createElement('div');
-                    div.className = `msg ${mine?'mine':''} ${d.role==='super'?'super':''}`;
-                    div.id = 'msg-'+k;
-                    
-                    let del = '';
-                    if(mine || State.profile.role==='super' || (State.profile.role==='admin' && d.role==='user')) {
-                        del = `<i class="fas fa-trash action-icon" onclick="UI.confirm('DEL','Delete?',()=>State.chatRef.child('${k}').remove())" style="margin-left:5px;"></i>`;
-                        if(mine) del += `<i class="fas fa-pen action-icon" onclick="Chat.editOpen('${k}')" style="margin-left:5px;"></i>`;
-                    }
-
-                    div.innerHTML = `
-                        <div class="msg-actions" style="${mine?'left:0;right:auto;':'right:0;left:auto;'}">${del}</div>
-                        <img src="${d.avatar}" class="avatar">
-                        <div class="bubble">
-                            <span class="msg-sender">${d.user}</span>
-                            <div>${d.text}</div>
-                            ${d.image ? `<img src="${d.image}" class="msg-img" onclick="showImg(this.src)">` : ''}
-                        </div>`;
-                    box.appendChild(div); box.scrollTop=box.scrollHeight;
-                });
-                ref.on('child_changed', s => {
-                    const e = document.getElementById('msg-'+s.key);
-                    if(e) e.querySelector('.bubble div').innerText = s.val().text;
-                });
-                ref.on('child_removed', s => { const e=document.getElementById('msg-'+s.key); if(e)e.remove(); });
-            },
+            del: k => UI.confirm("DELETE MESSAGE", "Permanently delete this message?", () => State.chatRef.child(k).remove()),
             editOpen: k => {
                 State.editKey = k;
                 State.chatRef.child(k).once('value').then(s => {
@@ -631,14 +578,7 @@
                 if(State.editKey && t) State.chatRef.child(State.editKey).update({text:t});
                 document.getElementById('modal-edit').classList.remove('open');
             },
-            startDM: () => {
-                if(!State.dmTarget) return;
-                const ids = [State.user.uid, State.dmTarget].sort();
-                document.getElementById('modal-user').classList.remove('open');
-                document.getElementById('chat-title').innerText = document.getElementById('u-name').innerText;
-                Route('chat');
-                Chat.listen(db.ref('dms/'+ids.join('_')), 'chat-feed');
-            },
+            close: () => Route('channels'),
             loadDMs: () => {
                 const l = document.getElementById('dm-list'); l.innerHTML = '';
                 db.ref('dms').once('value', s => {
@@ -649,11 +589,64 @@
                                 const u = us.val();
                                 const d = document.createElement('div'); d.className='list-item';
                                 d.innerHTML = `<img src="${u.avatar}" class="avatar"><div><b>${u.displayName}</b></div>`;
-                                d.onclick = () => { State.dmTarget = other; document.getElementById('u-name').innerText=u.displayName; Chat.startDM(); };
+                                d.onclick = () => { State.dmTarget = other; State.dmTargetName = u.displayName; Chat.startDM(); };
                                 l.appendChild(d);
                             });
                         }
                     });
+                });
+            },
+            startDM: () => {
+                if(!State.dmTarget) return;
+                const ids = [State.user.uid, State.dmTarget].sort();
+                document.getElementById('modal-user').classList.remove('open');
+                document.getElementById('chat-title').innerText = document.getElementById('u-name').innerText;
+                Route('chat');
+                Chat.listen(db.ref('dms/'+ids.join('_')), 'chat-feed');
+            },
+            listen: (ref, elId) => {
+                const feed = document.getElementById(elId); feed.innerHTML = '';
+                if(State.chatRef) State.chatRef.off();
+                State.chatRef = ref;
+                const myRole = State.profile.role;
+
+                ref.limitToLast(50).on('child_added', s => {
+                    const d = s.val(), key = s.key;
+                    const isMine = d.uid === State.user.uid;
+                    const div = document.createElement('div');
+                    div.id = 'msg-'+key;
+                    div.className = `msg ${isMine?'mine':''} ${d.role==='super'?'super':(d.role==='admin'?'admin':'')}`;
+                    
+                    let acts = '';
+                    let canDelete = isMine || myRole === 'super' || (myRole === 'admin' && d.role === 'user');
+                    if(isMine) acts += `<i class="fas fa-pen action-icon" onclick="Chat.editOpen('${key}')"></i>`;
+                    if(canDelete) acts += `<i class="fas fa-trash action-icon del" onclick="Chat.del('${key}')"></i>`;
+
+                    let roleBadge = '';
+                    if(d.role === 'super') roleBadge = '<span class="role-badge role-super">SUPER ADMIN</span>';
+                    else if(d.role === 'admin') roleBadge = '<span class="role-badge role-admin">ADMIN</span>';
+                    else if(d.role === 'tester') roleBadge = '<span class="role-badge role-tester">TESTER</span>';
+                    else roleBadge = '<span class="role-badge role-user">USER</span>';
+
+                    div.innerHTML = `
+                        ${acts ? `<div class="msg-actions">${acts}</div>` : ''}
+                        <img src="${d.avatar}" class="avatar" onclick="Profile.view('${d.uid}')">
+                        <div class="bubble">
+                            <div class="msg-sender">${d.user} ${roleBadge}</div>
+                            <div class="msg-text">${safe(d.text)}</div>
+                            ${d.image ? `<img src="${d.image}" class="msg-img" onclick="showImg(this.src)">` : ''}
+                        </div>
+                    `;
+                    feed.appendChild(div); feed.scrollTop = feed.scrollHeight;
+                });
+                
+                ref.on('child_changed', s => {
+                    const el = document.getElementById('msg-'+s.key);
+                    if(el) el.querySelector('.msg-text').innerText = s.val().text;
+                });
+                ref.on('child_removed', s => {
+                    const el = document.getElementById('msg-'+s.key);
+                    if(el) el.remove();
                 });
             }
         };
@@ -673,7 +666,12 @@
                         const v = c.val();
                         const d = document.createElement('div'); d.className='list-item';
                         const lock = v.pass ? '<i class="fas fa-lock"></i>' : '#';
-                        d.innerHTML = `<span>${lock} ${v.name}</span>`;
+                        let del = '';
+                        if(State.profile.role === 'super' || State.profile.role === 'admin') {
+                            del = `<div class="list-actions"><i class="fas fa-trash" style="color:var(--danger);" onclick="event.stopPropagation(); Channels.del('${c.key}')"></i></div>`;
+                        }
+                        
+                        d.innerHTML = `<span style="flex:1;">${lock} ${v.name}</span> ${del}`;
                         d.onclick = () => {
                             if(v.pass) { State.pendingCh={id:c.key, name:v.name, pass:v.pass}; document.getElementById('modal-pass').classList.add('open'); }
                             else { document.getElementById('chat-title').innerText='# '+v.name; Route('chat'); Chat.listen(db.ref('channels_msg/'+c.key), 'chat-feed'); }
@@ -688,7 +686,8 @@
                     document.getElementById('chat-title').innerText='# '+State.pendingCh.name;
                     Route('chat'); Chat.listen(db.ref('channels_msg/'+State.pendingCh.id), 'chat-feed');
                 } else UI.toast("Wrong Pass", "error");
-            }
+            },
+            del: (key) => UI.confirm("DELETE CHANNEL", "Remove this channel?", () => db.ref('channels/'+key).remove())
         };
 
         const Admin = {
@@ -700,12 +699,30 @@
                         const u = c.val(), uid = c.key;
                         if(u.email === SUPER_ADMIN) return;
                         const d = document.createElement('div'); d.className='admin-user-card';
-                        d.innerHTML = `<div><b>${u.displayName}</b></div><button class="btn-danger" style="font-size:0.6rem;padding:5px;" onclick="UI.confirm('BAN','Ban?',()=>db.ref('users/'+'${uid}').update({isBanned:!u.isBanned}))">${u.isBanned?'UNBAN':'BAN'}</button>`;
+                        
+                        let ctrls = '';
+                        if (State.profile.role === 'super') {
+                            if(u.role !== 'admin') ctrls += `<button class="btn-success" style="padding:2px 6px; font-size:0.7rem;" onclick="Admin.role('${uid}','admin')">OP</button>`;
+                            else ctrls += `<button class="btn-danger" style="padding:2px 6px; font-size:0.7rem;" onclick="Admin.role('${uid}','user')">DEOP</button>`;
+                            ctrls += `<button class="btn-danger" style="padding:2px 6px; font-size:0.7rem; margin-left:5px;" onclick="Admin.rm('${uid}')">DEL</button>`;
+                        }
+                        if (State.profile.role === 'super' || (State.profile.role === 'admin' && u.role === 'user')) {
+                            ctrls += `<button class="btn-danger" style="padding:2px 6px; font-size:0.7rem; margin-left:5px;" onclick="Admin.mod('${uid}','isBanned',${!u.isBanned})">${u.isBanned?'UNBAN':'BAN'}</button>`;
+                            // New: Tester button
+                            if(u.role !== 'tester' && u.role !== 'admin' && u.role !== 'super') {
+                                ctrls += `<button class="btn-warn" style="padding:2px 6px; font-size:0.7rem; margin-left:5px;" onclick="Admin.role('${uid}','tester')">TESTER</button>`;
+                            }
+                        }
+
+                        d.innerHTML = `<div><b>${u.displayName}</b> <span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span><br><small style="color:#888">${u.email}</small></div><div class="admin-controls">${ctrls}</div>`;
                         l.appendChild(d);
                     });
                 });
             },
-            nuke: (path) => UI.confirm("NUKE", "Delete all?", () => db.ref(path).remove())
+            mod: (u,k,v) => UI.confirm("ACTION", "Change status?", () => db.ref('users/'+u).update({[k]:v})),
+            role: (u,r) => UI.confirm("ROLE", "Set role to "+r+"?", () => db.ref('users/'+u).update({role:r})),
+            rm: (u) => UI.confirm("DELETE", "Delete user?", () => db.ref('users/'+u).remove()),
+            nuke: (path) => UI.confirm("NUKE", "Delete all?", () => db.ref(path).remove().then(()=>UI.toast("WIPED", "success")))
         };
 
         const Profile = {
@@ -767,7 +784,7 @@
         function safe(t){ return t ? t.replace(/</g,'&lt;') : ''; }
         function resize(f,m,c) { if(!f)return; const r=new FileReader(); r.onload=e=>{ const i=new Image(); i.onload=()=>{ const cv=document.createElement('canvas'); let w=i.width,h=i.height; if(w>m){h*=m/w;w=m;} cv.width=w;cv.height=h; cv.getContext('2d').drawImage(i,0,0,w,h); c(cv.toDataURL('image/jpeg',0.7)); }; i.src=e.target.result; }; r.readAsDataURL(f); }
 
-        Scene.init(); Auth.init();
+        Scene.init(); Auth.init(); Channels.load();
     </script>
 </body>
 </html>
