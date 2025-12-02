@@ -18,7 +18,7 @@ window.Admin = {
                 const u = c.val(); 
                 const uid = c.key;
                 
-                if (u.email === SUPER_ADMIN && State.profile.role !== 'super') return; 
+                // Убрана проверка u.email === SUPER_ADMIN, теперь суперы видны всем админам
                 if (uid === State.user.uid) return;
 
                 const card = document.createElement('div'); 
@@ -28,8 +28,14 @@ window.Admin = {
                 if (State.profile.role === 'super') {
                     if (u.role !== 'admin') btns += `<button class="act-btn" onclick="Admin.role('${uid}','admin')">OP</button>`;
                     else btns += `<button class="act-btn danger" onclick="Admin.role('${uid}','user')">DEOP</button>`;
+                    
+                    // Кнопка изменения ID
+                    btns += `<button class="act-btn" onclick="Admin.changeId('${uid}')">ID</button>`;
+                    
                     btns += `<button class="act-btn danger" onclick="Admin.rm('${uid}')">DEL</button>`;
                 }
+                
+                // Кнопка бана доступна всем админам
                 btns += `<button class="act-btn danger" onclick="Admin.mod('${uid}','isBanned',${!u.isBanned})">${u.isBanned?'UNBAN':'BAN'}</button>`;
 
                 card.innerHTML = `
@@ -50,5 +56,11 @@ window.Admin = {
     mod: (u,k,v) => db.ref('users/'+u).update({[k]:v}),
     role: (u,r) => db.ref('users/'+u).update({role:r}),
     rm: (u) => UI.confirm("DELETE", "Irreversible action.", () => db.ref('users/'+u).remove()),
-    nuke: (p) => UI.confirm("NUKE", "DELETE ALL?", () => db.ref(p).remove())
+    nuke: (p) => UI.confirm("NUKE", "DELETE ALL?", () => db.ref(p).remove()),
+    changeId: (u) => {
+        const newId = prompt("Введите новый ID пользователя:");
+        if (newId && newId.trim() !== "") {
+            db.ref('users/'+u).update({shortId: newId.trim()});
+        }
+    }
 };
