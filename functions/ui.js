@@ -1,10 +1,45 @@
 const UI = {
-    toast: (msg, type='info') => {
+    // ... (код уведомлений, toast, alert, confirm без изменений) ...
+    notify: (title, body, type='info', iconUrl=null) => {
         const c = document.getElementById('toast-container');
-        const e = document.createElement('div'); e.className=`toast ${type}`;
-        e.innerHTML = `<i class="fas fa-info-circle"></i> <span>${msg}</span>`;
-        c.appendChild(e); setTimeout(()=>{e.style.opacity=0;setTimeout(()=>e.remove(),300)},3000);
+        const t = document.createElement('div');
+        t.className = `neko-toast ${type}`;
+        
+        let iconHtml = '<i class="fas fa-info-circle"></i>';
+        if(type==='success') iconHtml = '<i class="fas fa-check-circle" style="color:#00ff88"></i>';
+        if(type==='error') iconHtml = '<i class="fas fa-exclamation-triangle" style="color:#ff0055"></i>';
+        if(type==='msg') iconHtml = iconUrl ? `<img src="${iconUrl}" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">` : '<i class="fas fa-comment-alt"></i>';
+
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        t.innerHTML = `
+            <div class="nt-icon">${iconHtml}</div>
+            <div class="nt-content">
+                <div class="nt-title">${title}</div>
+                <div class="nt-body">${body}</div>
+                <div class="nt-time">${time}</div>
+            </div>
+        `;
+
+        if(document.hidden && Notification.permission === "granted") {
+            const sysNotif = new Notification(title, { body: body, icon: iconUrl || 'icon.png', tag: 'neko-msg' });
+            sysNotif.onclick = () => { window.focus(); sysNotif.close(); };
+        }
+
+        c.appendChild(t);
+        setTimeout(() => {
+            t.classList.add('hiding');
+            t.addEventListener('animationend', () => t.remove());
+        }, 4000);
     },
+
+    toast: (msg, type='info') => {
+        let title = "System";
+        if(type==='error') title = "Error";
+        if(type==='success') title = "Success";
+        UI.notify(title, msg, type);
+    },
+
     alert: (title, text) => {
         document.getElementById('alert-title').innerText = title;
         document.getElementById('alert-text').innerText = text;
@@ -20,52 +55,70 @@ const UI = {
     },
     closeConfirm: () => document.getElementById('custom-confirm').classList.remove('open'),
     
-    // ОТКРЫТИЕ И ЗАКРЫТИЕ МЕНЮ
     toggleMenu: () => {
         const sb = document.getElementById('sidebar');
         const ov = document.getElementById('sidebar-overlay');
         sb.classList.toggle('open');
         ov.classList.toggle('open');
-    }
-};
+    },
 
-// UI Binds
-document.getElementById('new-ch-priv').onchange = e => {
-    if(e.target.checked) document.getElementById('new-ch-pass').classList.remove('hidden');
-    else document.getElementById('new-ch-pass').classList.add('hidden');
-};
+    // --- CROPPER MODULE (UPDATED) ---
+    Crop: {
+        instance: null,
+        onFinish: null,
+        onCancel: null,
 
-const Scene = {
-    init: () => {
-        const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x05000a, 0.03);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        camera.position.z = 3.5;
-        const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.body.prepend(renderer.domElement);
+        start: (file, aspectRatio, finishCb, cancelCb) => {
+            if(!file) return;
+            
+            // Мы убрали проверку на GIF, чтобы разрешить их обрезку.
+            // Примечание: GIF станет статичным после обрезки.
 
-        const group = new THREE.Group(); scene.add(group);
-        const mat = new THREE.MeshBasicMaterial({color: 0xb026ff, wireframe: true, transparent:true, opacity:0.3});
-        group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), mat));
-        const eG = new THREE.ConeGeometry(0.4, 0.9, 4);
-        const e1 = new THREE.Mesh(eG, mat); e1.position.set(0.6,0.8,-0.2); e1.rotation.set(-0.2,0,-0.4); group.add(e1);
-        const e2 = new THREE.Mesh(eG, mat); e2.position.set(-0.6,0.8,-0.2); e2.rotation.set(-0.2,0,0.4); group.add(e2);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById('crop-img');
+                img.src = e.target.result;
+                
+                document.getElementById('modal-cropper').classList.add('open');
+                UI.Crop.onFinish = finishCb;
+                UI.Crop.onCancel = cancelCb;
 
-        const pG = new THREE.BufferGeometry();
-        const pArr = new Float32Array(3000);
-        for(let i=0; i<3000; i++) pArr[i] = (Math.random()-0.5)*15;
-        pG.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
-        const stars = new THREE.Points(pG, new THREE.PointsMaterial({color:0x00ffff, size:0.03}));
-        scene.add(stars);
-        const anim = () => {
-            requestAnimationFrame(anim);
-            group.rotation.y += 0.003; group.rotation.x = Math.sin(Date.now()*0.001)*0.1;
-            stars.rotation.y -= 0.0005;
-            renderer.render(scene, camera);
-        };
-        anim();
-        window.onresize = () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
+                if(UI.Crop.instance) UI.Crop.instance.destroy();
+                
+                UI.Crop.instance = new Cropper(img, {
+                    aspectRatio: aspectRatio, 
+                    viewMode: 1,
+                    autoCropArea: 1,
+                    background: false,
+                    dragMode: 'move'
+                });
+            };
+            reader.readAsDataURL(file);
+        },
+
+        finish: () => {
+            if(!UI.Crop.instance) return;
+            // Получаем результат
+            const canvas = UI.Crop.instance.getCroppedCanvas({
+                maxWidth: 1024, maxHeight: 1024, fillColor: '#000000'
+            });
+            // Конвертируем в JPG (для оптимизации)
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            document.getElementById('modal-cropper').classList.remove('open');
+            UI.Crop.instance.destroy();
+            UI.Crop.instance = null;
+            
+            if(UI.Crop.onFinish) UI.Crop.onFinish(dataUrl);
+        },
+
+        cancel: () => {
+            document.getElementById('modal-cropper').classList.remove('open');
+            if(UI.Crop.instance) {
+                UI.Crop.instance.destroy();
+                UI.Crop.instance = null;
+            }
+            if(UI.Crop.onCancel) UI.Crop.onCancel();
+        }
     }
 };

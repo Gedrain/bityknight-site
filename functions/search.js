@@ -13,7 +13,11 @@ const Search = {
                     const d = document.createElement('div'); 
                     d.className = 'channel-card';
                     
-                    // Красивая карточка с аватаром
+                    // ИСПРАВЛЕНИЕ: Если у пользователя есть баннер, ставим его на фон
+                    if (u.banner) {
+                        d.style.backgroundImage = `url("${u.banner}")`;
+                    }
+
                     d.innerHTML = `
                         <img src="${u.avatar}" class="ch-avi">
                         <div class="ch-info">

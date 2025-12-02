@@ -4,16 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#05000a">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     
-    <title>NekoCore v35</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <title>NekoCore v44</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="css/style.css">
     
+    <style id="theme-style"></style>
+    
+    <style>
+        /* INLINE CSS FOR COMPONENTS */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .neko-toast { pointer-events: auto; min-width: 280px; max-width: 350px; background: rgba(14, 14, 18, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid var(--accent, #d600ff); border-radius: 8px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); display: flex; align-items: start; gap: 12px; color: #fff; transform: translateX(120%); animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; overflow: hidden; position: relative; }
+        .neko-toast.hiding { animation: slideOut 0.4s forwards; }
+        @keyframes slideIn { to { transform: translateX(0); } }
+        @keyframes slideOut { to { transform: translateX(120%); opacity: 0; } }
+        .nt-icon { font-size: 1.2rem; margin-top: 2px; }
+        .nt-content { display: flex; flex-direction: column; width: 100%; }
+        .nt-title { font-family: 'Exo 2'; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: var(--accent, #d600ff); }
+        .nt-body { font-size: 0.8rem; color: #ccc; line-height: 1.3; }
+        .nt-time { font-size: 0.7rem; color: #666; align-self: flex-end; margin-top: 5px; }
+        
+        .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 3px; font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+        .msg-checks { font-size: 0.7rem; }
+        .msg-checks.read { color: #00e5ff; } 
+        .badge-count { background: #ff0055; color: #fff; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; margin-left: auto; box-shadow: 0 0 5px #ff0055; display: none; }
+        .badge-count.visible { display: inline-block; }
+        .prefix-preview { font-family: 'Exo 2'; font-weight: 800; font-size: 1rem; margin-left: 10px; }
+
+        #modal-cropper .modal-box { width: 90%; max-width: 600px; height: 80vh; padding: 0; display: flex; flex-direction: column; background: #000; overflow: hidden; }
+        .crop-area { flex: 1; position: relative; background: #111; overflow: hidden; }
+        .crop-controls { padding: 15px; background: #0e0e12; border-top: 1px solid #333; display: flex; gap: 10px; justify-content: flex-end; }
+        #crop-img { max-width: 100%; }
+
+        /* PREVIEW STYLES FOR CHANNELS */
+        .ch-preview-box {
+            width: 100%; height: 140px; position: relative; margin-bottom: 20px;
+            background: #0e0e12; border-radius: 12px; overflow: hidden; border: 1px solid #333;
+        }
+        .ch-preview-banner {
+            width: 100%; height: 100%; background-position: center; background-size: cover; background-color: #1a1a20;
+        }
+        .ch-preview-avi {
+            width: 70px; height: 70px; border-radius: 50%;
+            position: absolute; bottom: 10px; left: 15px;
+            border: 3px solid #0e0e12; background: #000; object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+    </style>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -23,10 +74,15 @@
     <div id="bg-canvas"></div> 
 
     <div id="loader">
-        <i class="fas fa-atom fa-3x fa-spin" style="color:#d600ff; margin-bottom:20px;"></i>
-        <div style="font-family:'Exo 2'; font-weight:800; color:#fff;">NEKO CORE</div>
+        <div class="gothic-text-container">
+            <i class="fas fa-crow gothic-icon"></i>
+            <p>Оставь</p>
+            <p>надежду</p>
+            <p>всяк сюда</p>
+            <p>входящий</p>
+            <i class="fas fa-skull gothic-icon"></i>
+        </div>
     </div>
-
     <div id="app-root">
         <div id="view-auth" class="modal-box hidden">
             <h1 style="font-family:'Exo 2'; color:#d600ff;">NEKO ID</h1>
@@ -44,120 +100,83 @@
             <div id="sidebar-overlay" class="sidebar-overlay" onclick="UI.toggleMenu()"></div>
 
             <div id="sidebar" class="sidebar">
-                <div class="sidebar-header"><span style="color:#d600ff;">NEKO</span>CORE</div>
+                <div class="sidebar-header"><span class="accent-text">NEKO</span>CORE</div>
                 <div class="nav-group">
-                    <div class="nav-item active" onclick="Route('news')"><i class="fas fa-rss"></i> NEWS</div>
-                    <div class="nav-item" onclick="Route('channels')"><i class="fas fa-hashtag"></i> CHANNELS</div>
-                    <div class="nav-item" onclick="Route('dms')"><i class="fas fa-comments"></i> MESSAGES</div>
+                    <div class="nav-item active" onclick="Route('channels')"><i class="fas fa-hashtag"></i> CHANNELS</div>
+                    <div class="nav-item" onclick="Route('dms')"><i class="fas fa-comments"></i> MESSAGES <span id="total-dm-badge" class="badge-count">0</span></div>
                     <div class="nav-item" onclick="Route('search')"><i class="fas fa-search"></i> SEARCH</div>
                 </div>
                 <div class="nav-group bottom">
                     <div id="nav-admin" class="nav-item hidden" onclick="Route('admin')"><i class="fas fa-shield-alt" style="color:#ff0055"></i> ADMIN</div>
-                    <div class="nav-item" onclick="Route('profile')"><i class="fas fa-user-circle"></i> PROFILE</div>
+                    <div class="nav-item" onclick="Route('settings')"><i class="fas fa-cog"></i> SETTINGS</div>
                     <div class="nav-item" onclick="Auth.logout()"><i class="fas fa-power-off"></i> EXIT</div>
                 </div>
             </div>
 
             <div class="content-wrapper">
-                
-                <div id="tab-news" class="tab-pane active">
-                    <div class="top-bar">
-                        <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
-                        <div class="top-title">NEWS</div>
-                        <div></div> </div>
-                    <div id="news-feed" class="messages-container"></div>
-                    <div id="news-input" class="chat-input-area hidden">
-                        <input type="text" id="news-msg-in" placeholder="Broadcast...">
-                        <button class="btn-solid" style="width:50px;" onclick="Chat.send('news')"><i class="fas fa-paper-plane"></i></button>
-                    </div>
-                </div>
-                
-                <div id="tab-channels" class="tab-pane">
+                <div id="tab-channels" class="tab-pane active">
                     <div class="top-bar">
                         <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
                         <div class="top-title">CHANNELS</div>
                         <div style="display:flex; justify-content:center; align-items:center;">
-                            <i class="fas fa-plus" style="cursor:pointer; color:#d600ff; font-size:1.2rem;" onclick="document.getElementById('modal-create').classList.add('open')"></i>
+                            <i class="fas fa-plus" style="cursor:pointer; color:var(--accent, #d600ff); font-size:1.2rem;" onclick="document.getElementById('modal-create').classList.add('open')"></i>
                         </div>
                     </div>
                     <div id="channel-list" class="list-container"></div>
                 </div>
                 
-                <div id="tab-chat" class="tab-pane">
-                    <div class="top-bar">
-                        <div class="menu-trigger" style="font-size:1.2rem;" onclick="Route('channels')"><i class="fas fa-arrow-left"></i></div>
-                        <div class="top-title" id="chat-title">CHAT</div>
-                        <div></div>
-                    </div>
-                    <div id="chat-feed" class="messages-container"></div>
-                    <div class="chat-input-area">
-                        <label for="file-in" style="cursor:pointer; color:#888;"><i class="fas fa-paperclip"></i></label>
-                        <input type="file" id="file-in" hidden multiple accept="image/*">
-                        <input type="text" id="msg-in" placeholder="Message...">
-                        <button class="btn-solid" style="width:50px;" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button>
-                    </div>
-                </div>
-                
-                <div id="tab-dms" class="tab-pane">
+                <div id="tab-chat" class="tab-pane"><div class="top-bar"><div class="menu-trigger" style="font-size:1.2rem;" onclick="Route('channels')"><i class="fas fa-arrow-left"></i></div><div class="top-title" id="chat-title">CHAT</div><div></div></div><div id="chat-feed" class="messages-container"></div><div class="chat-input-area"><label for="file-in" style="cursor:pointer; color:#888;"><i class="fas fa-paperclip"></i></label><input type="file" id="file-in" hidden multiple accept="image/*"><input type="text" id="msg-in" placeholder="Message..."><button class="btn-solid" style="width:50px;" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button></div></div>
+                <div id="tab-dms" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">MESSAGES</div><div></div></div><div id="dm-list" class="list-container"></div></div>
+                <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
+
+                <div id="tab-settings" class="tab-pane">
                     <div class="top-bar">
                         <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
-                        <div class="top-title">MESSAGES</div>
+                        <div class="top-title">SETTINGS</div>
                         <div></div>
                     </div>
-                    <div id="dm-list" class="list-container"></div>
-                </div>
-                
-                <div id="tab-search" class="tab-pane">
-                    <div class="top-bar">
-                        <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
-                        <div class="top-title">SEARCH</div>
-                        <div></div>
-                    </div>
-                    <div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div>
-                    <div id="search-results" class="list-container"></div>
-                </div>
-                
-                <div id="tab-profile" class="tab-pane">
-                    <div class="top-bar">
-                        <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
-                        <div class="top-title">EDITOR</div>
-                        <div></div>
-                    </div>
-                    <div class="admin-scroll-area"> <div class="p-20 flex-col" style="gap:15px;">
-                            <div style="background:#0e0e12; border:1px solid #333; border-radius:16px; overflow:hidden;">
-                                <div id="my-banner-prev" style="height:120px; background:#222; background-size:cover; background-position:center;"></div>
-                                <div style="padding:0 20px 20px 20px; text-align:center; margin-top:-40px;">
-                                    <img id="my-avi" style="width:80px; height:80px; border-radius:50%; border:4px solid #0e0e12; object-fit:cover; background:#000;">
-                                    <div id="my-id-badge" style="color:#666; font-family:monospace; margin-top:5px;">ID: ???</div>
+                    <div class="admin-scroll-area"> 
+                        <div class="p-20 flex-col" style="gap:25px;">
+                            <div>
+                                <h4 style="color:#666; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">Identity</h4>
+                                <div style="background:#0e0e12; border:1px solid #333; border-radius:16px; overflow:hidden;" class="panel-box">
+                                    <div id="my-banner-prev" style="height:120px; background:#222; background-size:cover; background-position:center;"></div>
+                                    <div style="padding:0 20px 20px 20px; text-align:center; margin-top:-40px;">
+                                        <img id="my-avi" style="width:80px; height:80px; border-radius:50%; border:4px solid #0e0e12; object-fit:cover; background:#000;" class="panel-border">
+                                        <div id="my-id-badge" style="color:#666; font-family:monospace; margin-top:5px;">ID: ???</div>
+                                    </div>
+                                </div>
+                                <div class="file-grid" style="margin-top:15px;">
+                                    <label class="file-zone" for="avi-in"><i class="fas fa-user"></i><span>Avatar</span></label>
+                                    <label class="file-zone" for="banner-in"><i class="fas fa-image"></i><span>Banner</span></label>
+                                </div>
+                                <input type="file" id="avi-in" hidden accept="image/*">
+                                <input type="file" id="banner-in" hidden accept="image/*">
+                                <input type="text" id="my-nick" placeholder="Codename" style="margin-top:10px;">
+                                <textarea id="my-bio" rows="3" placeholder="Bio..." style="margin-top:10px;"></textarea>
+                                <div style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
+                                    <label style="font-size:0.8rem; color:#888;">Custom Prefix</label>
+                                    <div style="display:flex; gap:10px; margin-top:5px;">
+                                        <input type="text" id="set-prefix" placeholder="e.g. KING" maxlength="10" style="flex:1;">
+                                        <input type="color" id="set-prefix-color" value="#ffffff" style="width:50px; height:40px; padding:0; border:none; background:none;">
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="file-grid">
-                                <label class="file-zone" for="avi-in"><i class="fas fa-user"></i><span>Avatar</span></label>
-                                <label class="file-zone" for="banner-in"><i class="fas fa-image"></i><span>Banner</span></label>
+                            <div>
+                                <h4 style="color:#666; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">Appearance</h4>
+                                <div style="display:flex; flex-direction:column; gap:10px;">
+                                    <div class="setting-row"><span>Accent Color</span><input type="color" id="set-accent" value="#d600ff" oninput="Settings.previewTheme()"></div>
+                                    <div class="setting-row"><span>Background</span><input type="color" id="set-bg" value="#05000a" oninput="Settings.previewTheme()"></div>
+                                    <div class="setting-row"><span>Panel / Sidebar</span><input type="color" id="set-panel" value="#0e0e12" oninput="Settings.previewTheme()"></div>
+                                    <button class="btn-text" onclick="Settings.resetTheme()" style="align-self:flex-start; margin-top:5px; color:#666;">Reset to Default</button>
+                                </div>
                             </div>
-                            <input type="file" id="avi-in" hidden accept="image/*">
-                            <input type="file" id="banner-in" hidden accept="image/*">
-                            
-                            <input type="text" id="my-nick" placeholder="Codename">
-                            <textarea id="my-bio" rows="3" placeholder="Bio..."></textarea>
-                            <button class="btn-solid" onclick="Profile.save()">SAVE CHANGES</button>
+                            <div><h4 style="color:#666; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">Notifications</h4><button class="btn-solid" onclick="UI.notify('System', 'This is a test notification', 'info')">TEST NOTIFICATION</button></div>
+                            <button class="btn-solid" onclick="Settings.save()">SAVE CHANGES</button>
                         </div>
                     </div>
                 </div>
-
-                <div id="tab-admin" class="tab-pane">
-                    <div class="top-bar">
-                        <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
-                        <div class="top-title text-danger">ROOT</div>
-                        <div></div>
-                    </div>
-                    <div class="admin-scroll-area"> <div id="super-admin-controls" class="hidden mb-20">
-                            <button class="btn-danger" onclick="Admin.nuke('news')">WIPE NEWS</button>
-                        </div>
-                        <div id="admin-list" class="admin-grid"></div>
-                    </div>
-                </div>
+                <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
             </div>
         </div>
     </div>
@@ -166,16 +185,16 @@
         <div class="modal-content profile-card-modal">
             <div id="u-banner" class="p-banner"></div>
             <div class="p-avi-wrapper"><img id="u-avi" class="p-avi"><div id="u-status" class="p-status"></div></div>
-            <div class="p-body">
-                <div id="u-name" class="p-name"></div>
-                <div id="u-id" class="p-id"></div>
-                <div id="u-badges" class="p-badges"></div>
-                <div id="u-role" class="p-role"></div>
-                <div class="p-actions">
-                    <button class="btn-solid" onclick="Chat.startDM()">MESSAGE</button>
-                    <button class="btn-danger" id="btn-block" onclick="Block.toggle()">BLOCK</button>
-                    <button class="btn-text" onclick="document.getElementById('modal-user').classList.remove('open')">CLOSE</button>
-                </div>
+            <div class="p-body"><div id="u-name" class="p-name"></div><div id="u-id" class="p-id"></div><div id="u-prefix-container" style="text-align:center; margin-bottom:10px; font-weight:800; font-family:'Exo 2';"></div><div id="u-badges" class="p-badges"></div><div id="u-role" class="p-role"></div><div class="p-actions"><button class="btn-solid" onclick="Chat.startDM()">MESSAGE</button><button class="btn-danger" id="btn-block" onclick="Block.toggle()">BLOCK</button><button class="btn-text" onclick="document.getElementById('modal-user').classList.remove('open')">CLOSE</button></div></div>
+        </div>
+    </div>
+
+    <div id="modal-cropper" class="modal-overlay">
+        <div class="modal-box">
+            <div class="crop-area"><img id="crop-img" style="display:block; max-width:100%;"></div>
+            <div class="crop-controls">
+                <button class="btn-danger" onclick="UI.Crop.cancel()">CANCEL</button>
+                <button class="btn-solid" onclick="UI.Crop.finish()">APPLY</button>
             </div>
         </div>
     </div>
@@ -183,21 +202,23 @@
     <div id="modal-create" class="modal-overlay">
         <div class="modal-box">
             <h3>NEW CHANNEL</h3>
+            <div class="ch-preview-box">
+                <div id="new-ch-banner-prev" class="ch-preview-banner"></div>
+                <img id="new-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+">
+            </div>
+
             <div class="file-grid">
                 <label class="file-zone" for="new-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label>
                 <label class="file-zone" for="new-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label>
             </div>
             <input type="file" id="new-ch-avi" hidden accept="image/*">
             <input type="file" id="new-ch-banner" hidden accept="image/*">
-
             <input type="text" id="new-ch-name" placeholder="Name">
-            
             <label class="toggle-wrapper">
                 <input type="checkbox" id="new-ch-priv" class="toggle-checkbox">
                 <div class="toggle-switch"></div>
                 <div class="toggle-label">Private Channel</div>
             </label>
-
             <input type="password" id="new-ch-pass" class="hidden" placeholder="Password">
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="btn-solid" onclick="Channels.create()">CREATE</button>
@@ -209,13 +230,17 @@
     <div id="modal-channel-settings" class="modal-overlay">
         <div class="modal-box">
             <h3>CHANNEL SETTINGS</h3>
+            <div class="ch-preview-box">
+                <div id="edit-ch-banner-prev" class="ch-preview-banner"></div>
+                <img id="edit-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+">
+            </div>
+
             <div class="file-grid">
                 <label class="file-zone" for="edit-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label>
                 <label class="file-zone" for="edit-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label>
             </div>
             <input type="file" id="edit-ch-avi" hidden accept="image/*">
             <input type="file" id="edit-ch-banner" hidden accept="image/*">
-
             <input type="text" id="edit-ch-name" placeholder="Channel Name">
             <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
                 <button class="btn-solid" onclick="Channels.saveSettings()">SAVE</button>
@@ -244,8 +269,6 @@
     <script src="functions/main.js"></script>
     <script>
         document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);
-        
-        // PWA Register
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')

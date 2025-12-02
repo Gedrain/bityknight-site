@@ -1,3 +1,6 @@
+/* Добавь это в САМУЮ ПЕРВУЮ строку файла css/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Pirata+One&display=swap');
+
 /* --- NEKO CORE v35 (GRID LAYOUT FIX) --- */
 :root {
     --bg: #05000a;
@@ -82,7 +85,6 @@ input:focus, textarea:focus {
 .tab-pane.active { display: flex; animation: fadeIn 0.2s; }
 
 /* --- NEW ROBUST TOP BAR (GRID) --- */
-/* Используем GRID, чтобы кнопка гарантированно занимала место */
 .top-bar { 
     height: 75px; 
     border-bottom: 1px solid rgba(255,255,255,0.05); 
@@ -108,7 +110,6 @@ input:focus, textarea:focus {
     text-overflow: ellipsis;
 }
 
-/* Кнопка меню - теперь просто текст-символ */
 .menu-trigger {
     display: flex !important;
     justify-content: center;
@@ -135,12 +136,23 @@ input:focus, textarea:focus {
 
 /* LISTS */
 .list-container { padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+/* CHANNEL CARDS */
 .channel-card {
-    height: 70px; border-radius: 12px; background-color: #1a1a20; background-size: cover; background-position: center;
-    position: relative; overflow: hidden; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;
+    height: 70px; border-radius: 12px; 
+    background-color: #2d2d38; 
+    background-size: cover; background-position: center;
+    position: relative; overflow: hidden; cursor: pointer; 
+    border: 1px solid rgba(255,255,255,0.15); 
+    transition: 0.2s;
 }
 .channel-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-.channel-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 100%); z-index: 1; }
+.channel-card::before { 
+    content: ''; position: absolute; inset: 0; 
+    background: linear-gradient(90deg, rgba(0,0,0,0.4) 0%, transparent 100%); 
+    z-index: 1; 
+}
+
 .ch-content { position: relative; z-index: 2; height: 100%; display: flex; align-items: center; padding: 0 15px; gap: 15px; }
 .ch-avi { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #000; border: 2px solid rgba(255,255,255,0.1); }
 .ch-info { flex: 1; }
@@ -149,7 +161,7 @@ input:focus, textarea:focus {
 .ch-settings { color: #fff; opacity: 0.6; padding: 8px; cursor: pointer; transition: 0.2s; }
 .ch-settings:hover { opacity: 1; color: var(--secondary); transform: rotate(90deg); }
 
-/* --- FILE UPLOAD ZONES --- */
+/* FILE UPLOAD ZONES */
 .file-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
 .file-zone {
     border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px;
@@ -160,7 +172,7 @@ input:focus, textarea:focus {
 .file-zone i { font-size: 1.5rem; margin-bottom: 5px; }
 .file-zone span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
 
-/* --- ADMIN PANEL --- */
+/* ADMIN PANEL */
 .admin-scroll-area { flex: 1; overflow-y: auto; padding: 20px; }
 .admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; padding-bottom: 40px; }
 .admin-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 15px; }
@@ -172,7 +184,7 @@ input:focus, textarea:focus {
 .act-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
 .act-btn.danger { color: var(--danger); border-color: rgba(255,0,85,0.3); }
 
-/* --- PROFILE MODAL --- */
+/* PROFILE MODAL */
 .profile-card-modal { width: 100%; max-width: 360px; padding: 0 !important; overflow: hidden; background: #0e0e12; border: 1px solid var(--primary); border-radius: 24px; position: relative; }
 .p-banner { height: 130px; width: 100%; background-color: #222; background-size: cover; background-position: center; position: relative; }
 .p-banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, #0e0e12 0%, transparent 100%); }
@@ -220,3 +232,78 @@ input:focus, textarea:focus {
 }
 
 @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+
+/* =========================================
+   SCARY GOTHIC LOADER STYLES
+   ========================================= */
+
+#loader {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background-color: #000000 !important; /* Total Black */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    transition: opacity 0.8s ease-in-out, visibility 0.8s;
+}
+
+#loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Контейнер для текста и декора */
+.gothic-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: scaryPulse 4s infinite ease-in-out;
+}
+
+/* Декоративные элементы (крылья/ангелы) */
+.gothic-icon {
+    font-size: 3rem;
+    color: #ff0000;
+    opacity: 0.8;
+    margin: 15px 0;
+    text-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+}
+
+/* Стили текста */
+.gothic-text-container p {
+    font-family: 'Pirata One', cursive; /* Готический шрифт */
+    color: #ff0000; /* Кроваво-красный */
+    font-size: 3.5rem;
+    line-height: 1.1;
+    margin: 2px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.7),
+                 0 0 30px rgba(139, 0, 0, 0.5);
+}
+
+/* Анимация дыхания */
+@keyframes scaryPulse {
+    0%, 100% {
+        opacity: 0.7;
+        transform: scale(1);
+        text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.03);
+        text-shadow: 0 0 20px rgba(255, 0, 0, 1),
+                     0 0 50px rgba(255, 0, 0, 0.8),
+                     0 0 5px #000;
+    }
+}
+
+@media (max-width: 768px) {
+    .gothic-text-container p { font-size: 2.2rem; }
+    .gothic-icon { font-size: 2rem; }
+}
