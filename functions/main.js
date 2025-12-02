@@ -4,7 +4,12 @@ window.Route = (t) => {
     const btn = document.querySelector(`.nav-item[onclick="Route('${t}')"]`);
     if(btn) btn.classList.add('active');
     document.getElementById('tab-'+t).classList.add('active');
+    
+    // Закрываем меню и оверлей
     document.getElementById('sidebar').classList.remove('open');
+    const overlay = document.getElementById('sidebar-overlay');
+    if(overlay) overlay.classList.remove('open');
+
     if(t === 'dms') Chat.loadDMs();
 };
 

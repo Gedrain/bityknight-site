@@ -19,7 +19,12 @@ const UI = {
         document.getElementById('custom-confirm').classList.add('open');
     },
     closeConfirm: () => document.getElementById('custom-confirm').classList.remove('open'),
-    toggleMenu: () => document.getElementById('sidebar').classList.toggle('open')
+    
+    // UPDATED TOGGLE MENU
+    toggleMenu: () => {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebar-overlay').classList.toggle('open');
+    }
 };
 
 // UI Binds
