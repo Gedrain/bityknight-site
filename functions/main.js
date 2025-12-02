@@ -1,15 +1,18 @@
 window.Route = (t) => {
+    // Сброс активных классов
     document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(e => e.classList.remove('active'));
+    
+    // Активация нужной вкладки
     const btn = document.querySelector(`.nav-item[onclick="Route('${t}')"]`);
     if(btn) btn.classList.add('active');
     document.getElementById('tab-'+t).classList.add('active');
     
-    // Закрываем меню и оверлей
+    // ЗАКРЫТИЕ ШТОРКИ И ОВЕРЛЕЯ (Mobile Logic)
     document.getElementById('sidebar').classList.remove('open');
-    const overlay = document.getElementById('sidebar-overlay');
-    if(overlay) overlay.classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
 
+    // Логика личных сообщений
     if(t === 'dms') Chat.loadDMs();
 };
 

@@ -20,10 +20,12 @@ const UI = {
     },
     closeConfirm: () => document.getElementById('custom-confirm').classList.remove('open'),
     
-    // UPDATED TOGGLE MENU
+    // ОТКРЫТИЕ И ЗАКРЫТИЕ МЕНЮ
     toggleMenu: () => {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('sidebar-overlay').classList.toggle('open');
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('sidebar-overlay');
+        sb.classList.toggle('open');
+        ov.classList.toggle('open');
     }
 };
 
