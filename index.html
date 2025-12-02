@@ -2,789 +2,199 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#0a0010">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>NekoChat v17.2 // Roles</title>
-    
-    <!-- LIBRARIES -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NekoCore v35</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
-    <link rel="manifest" id="my-manifest">
-
-    <style>
-        /* --- VARIABLES --- */
-        :root {
-            --bg: #05000a;
-            --primary: #b026ff;
-            --secondary: #00ffff;
-            --glass: rgba(15, 5, 25, 0.95);
-            --border: rgba(176, 38, 255, 0.4);
-            --text: #ffffff;
-            --dim: #a0a0a0;
-            --danger: #ff0055;
-            --success: #00ff99;
-            --warning: #ffcc00;
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-bot: env(safe-area-inset-bottom, 0px);
-            --font: 'Rajdhani', sans-serif;
-        }
-
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            margin: 0; overflow: hidden; background: var(--bg);
-            font-family: var(--font); color: var(--text); user-select: none;
-            height: 100vh; height: -webkit-fill-available;
-        }
-
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
-
-        #app-root {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center; z-index: 10;
-            padding-top: var(--safe-top); padding-bottom: var(--safe-bot);
-        }
-        .hidden { display: none !important; }
-        .flex-col { display: flex; flex-direction: column; }
-        .flex-center { display: flex; justify-content: center; align-items: center; }
-
-        /* --- UI COMPONENTS --- */
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            box-shadow: 0 0 40px rgba(176, 38, 255, 0.15);
-            border-radius: 20px;
-            position: relative; overflow: hidden;
-        }
-
-        button.btn {
-            width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 1px; transition: 0.1s;
-            font-family: var(--font); font-size: 1rem;
-            background: rgba(176, 38, 255, 0.1); border: 1px solid var(--primary); color: var(--primary);
-        }
-        button.btn:active { background: var(--primary); color: #fff; transform: scale(0.96); }
-        button.btn-danger { border-color: var(--danger); color: var(--danger); background: rgba(255,0,85,0.1); }
-        button.btn-success { border-color: var(--success); color: var(--success); background: rgba(0,255,153,0.1); }
-        button.btn-warn { border-color: var(--warning); color: var(--warning); background: rgba(255, 204, 0, 0.1); }
-
-        input, textarea {
-            width: 100%; padding: 12px 16px; margin-bottom: 12px;
-            background: rgba(0,0,0,0.5); border: 1px solid #444; border-radius: 12px;
-            color: #fff; font-size: 16px; transition: 0.3s; font-family: var(--font);
-        }
-        input:focus { border-color: var(--secondary); }
-
-        /* --- MAIN LAYOUT --- */
-        #view-main {
-            width: 100%; height: 100%; max-width: 1400px;
-            display: grid; grid-template-columns: 80px 1fr;
-            background: rgba(0,0,0,0.2);
-        }
-
-        @media (max-width: 768px) {
-            #view-main { display: block; position: relative; }
-            .sidebar {
-                position: absolute; top: 0; left: 0; height: 100%; width: 240px;
-                background: rgba(10, 5, 15, 0.98); border-right: 1px solid var(--primary);
-                z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease;
-                padding-top: 60px; box-shadow: 10px 0 50px rgba(0,0,0,0.8);
-            }
-            .sidebar.open { transform: translateX(0); }
-            .sidebar-close {
-                position: absolute; top: 15px; right: 15px; font-size: 1.5rem; color: var(--danger);
-                display: block !important; cursor: pointer;
-            }
-            .content { height: 100%; width: 100%; }
-            .mobile-menu-btn { display: block !important; font-size: 1.5rem; color: var(--secondary); padding: 10px; cursor: pointer; }
-        }
-
-        .sidebar {
-            background: rgba(0,0,0,0.6); border-right: 1px solid var(--border);
-            padding-top: 25px; display: flex; flex-direction: column; align-items: center; gap: 20px;
-        }
-        .sidebar-close { display: none; }
-        .mobile-menu-btn { display: none; }
-
-        .nav-item {
-            font-size: 1.4rem; color: var(--dim); cursor: pointer; transition: 0.2s;
-            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 14px;
-            @media (max-width: 768px) { width: 80%; justify-content: flex-start; padding-left: 20px; font-size: 1.2rem; gap: 15px; }
-        }
-        .nav-text { display: none; @media (max-width: 768px) { display: inline; font-size: 1rem; } }
-        .nav-item.active { color: var(--secondary); background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.3); }
-
-        .content { position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        .tab-pane { flex: 1; display: none; flex-direction: column; height: 100%; }
-        .tab-pane.active { display: flex; animation: fadeUp 0.3s ease; }
-        @keyframes fadeUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
-
-        /* HEADER */
-        .header {
-            height: 60px; padding: 0 20px; background: rgba(0,0,0,0.6); 
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex; justify-content: flex-start; align-items: center; gap: 15px;
-        }
-        .header-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .header-title { font-weight: 700; color: var(--secondary); letter-spacing: 1px; font-size: 1.1rem; }
-
-        /* LISTS & CHAT */
-        .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { display: flex; gap: 10px; max-width: 95%; position: relative; }
-        .msg.mine { align-self: flex-end; flex-direction: row-reverse; }
-        
-        .avatar { width: 38px; height: 38px; border-radius: 10px; background: #000; object-fit: cover; flex-shrink: 0; border: 1px solid #333; }
-        
-        .bubble {
-            background: rgba(40, 40, 45, 0.9); padding: 10px 14px; border-radius: 16px;
-            border-top-left-radius: 4px; color: #eee; font-size: 1rem; line-height: 1.4;
-            min-width: 60px; position: relative; word-wrap: break-word;
-        }
-        .msg.mine .bubble { background: rgba(176, 38, 255, 0.2); border: 1px solid var(--primary); border-top-left-radius: 16px; border-top-right-radius: 4px; color: #fff; }
-        
-        /* ADMIN MSG STYLES */
-        .msg.admin .bubble, .msg.super .bubble {
-            border: 1px solid var(--danger);
-            background: rgba(255, 0, 85, 0.15);
-            color: #fff;
-        }
-        .msg.admin .msg-sender, .msg.super .msg-sender { color: var(--danger); text-shadow: 0 0 5px var(--danger); }
-
-        .msg-sender { font-weight: 700; color: var(--secondary); font-size: 0.75rem; margin-bottom: 3px; display: block; }
-        .msg-img { max-width: 100%; border-radius: 8px; margin-top: 5px; border: 1px solid var(--border); }
-
-        /* ROLE BADGES */
-        .role-badge { font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; margin-left: 5px; vertical-align: middle; color: #000; font-weight: bold; }
-        .role-super { background: #fff; }
-        .role-admin { background: var(--danger); color: #fff; }
-        .role-tester { background: var(--warning); }
-        .role-user { background: var(--success); }
-
-        .input-bar { padding: 10px; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; align-items: center; }
-        .input-bar input { margin: 0; padding: 10px 15px; border-radius: 25px; border-color: transparent; background: rgba(255,255,255,0.1); flex: 1; }
-
-        .list-item { 
-            padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); 
-            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s;
-            background: rgba(255,255,255,0.02); margin-bottom: 5px; border-radius: 12px; position: relative;
-        }
-        .list-item:active { background: rgba(176, 38, 255, 0.1); }
-        .list-actions { margin-left: auto; z-index: 5; padding: 10px; }
-
-        /* ADMIN CARDS */
-        .admin-user-card {
-            background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px;
-            border: 1px solid transparent; display: flex; flex-direction: column; gap: 10px;
-        }
-        .admin-user-card:hover { border-color: var(--primary); background: rgba(176,38,255,0.05); }
-        .admin-controls { display: flex; gap: 5px; flex-wrap: wrap; }
-
-        /* ALERTS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-overlay.open { display: flex; animation: fadeIn 0.2s; }
-        .modal-content { width: 90%; max-width: 320px; text-align: center; padding: 25px; border: 1px solid var(--primary); }
-        .confirm-title { font-size: 1.2rem; color: var(--secondary); font-weight: bold; margin-bottom: 10px; }
-
-        #toast-container { position: fixed; top: 20px; right: 20px; left: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { background: rgba(10,5,15,0.95); border: 1px solid var(--border); border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideIn 0.3s ease; pointer-events: all; }
-        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        #loader { position: fixed; inset: 0; background: #05000a; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; color: var(--primary); transition: opacity 0.8s; }
-        
-        .msg-actions {
-            position: absolute; top: -10px; right: 0; background: #000; border: 1px solid var(--primary);
-            border-radius: 8px; padding: 2px 6px; display: flex; gap: 8px; opacity: 0; transition: 0.2s;
-        }
-        .msg:hover .msg-actions { opacity: 1; }
-        .msg.mine .msg-actions { right: auto; left: 0; }
-        .action-icon { font-size: 0.8rem; cursor: pointer; color: #aaa; }
-        .action-icon:hover { color: #fff; }
-    </style>
 </head>
 <body>
-
     <div id="toast-container"></div>
-
-    <div id="custom-confirm" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <div id="confirm-title" class="confirm-title">CONFIRM</div>
-            <div id="confirm-text" style="color:#ddd; margin-bottom:20px;">Are you sure?</div>
-            <div class="flex-center" style="gap: 15px;">
-                <button id="btn-confirm-yes" class="btn">YES</button>
-                <button class="btn btn-danger" onclick="UI.closeConfirm()">NO</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="custom-alert" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <div id="alert-title" class="confirm-title" style="color:var(--danger)">ALERT</div>
-            <div id="alert-text" style="color:#ddd; margin-bottom:20px;">Message</div>
-            <button class="btn" onclick="document.getElementById('custom-alert').classList.remove('open')">OK</button>
-        </div>
-    </div>
+    <div id="bg-canvas"></div> 
 
     <div id="loader">
-        <i class="fas fa-cat fa-4x fa-spin" style="margin-bottom: 20px; color:var(--secondary); text-shadow: 0 0 20px var(--secondary);"></i>
-        <div style="font-weight:700; letter-spacing:4px; font-size: 1.2rem;">NEKO CORE v17.2</div>
-        <div style="color:var(--dim); margin-top:10px; font-size:0.8rem;">LOADING MODULES...</div>
+        <i class="fas fa-atom fa-3x fa-spin" style="color:#d600ff; margin-bottom:20px;"></i>
+        <div style="font-family:'Exo 2'; font-weight:800; color:#fff;">NEKO CORE</div>
     </div>
 
     <div id="app-root">
-        
-        <div id="view-auth" class="glass-panel hidden" style="width:90%; max-width:350px; padding:40px 30px; text-align:center;">
-            <h1 style="color:var(--primary); font-size: 2.5rem; margin:0;">NEKO ID</h1>
-            <p style="color:var(--secondary); font-size:0.9rem; margin-bottom:30px;">MOBILE UPLINK</p>
-            <input type="email" id="auth-email" placeholder="ACCESS EMAIL">
-            <input type="password" id="auth-pass" placeholder="PASSPHRASE">
-            <input type="text" id="auth-nick" placeholder="CODENAME" style="display:none;">
-            <button class="btn" onclick="Auth.submit()" style="margin-top: 15px;">CONNECT</button>
-            <div style="margin-top:20px; font-size:0.85rem; color:#888; display:flex; justify-content:space-between;">
-                <span style="text-decoration:underline; cursor:pointer;" onclick="Auth.toggle()">Create Account</span>
-                <span style="cursor:pointer;" onclick="Auth.reset()">Forgot?</span>
+        <div id="view-auth" class="modal-box hidden">
+            <h1 style="font-family:'Exo 2'; color:#d600ff;">NEKO ID</h1>
+            <input type="email" id="auth-email" placeholder="E-mail">
+            <input type="password" id="auth-pass" placeholder="Password">
+            <input type="text" id="auth-nick" placeholder="Codename" style="display:none;">
+            <button class="btn-solid" onclick="Auth.submit()" style="margin-top:15px;">LOGIN</button>
+            <div style="margin-top:15px; display:flex; justify-content:space-between; font-size:0.8rem; color:#666;">
+                <span onclick="Auth.toggle()" style="cursor:pointer;">Register</span>
+                <span onclick="Auth.reset()" style="cursor:pointer;">Reset</span>
             </div>
         </div>
 
-        <div id="view-main" class="hidden" style="width:100%; height:100%;">
-            
+        <div id="view-main" class="hidden">
             <div id="sidebar" class="sidebar">
-                <div class="sidebar-close" onclick="UI.toggleMenu()"><i class="fas fa-times"></i></div>
-                <div style="margin-bottom:20px; font-weight:bold; color:var(--primary); font-size:1.5rem;">MENU</div>
-                
-                <div class="nav-item active" onclick="Route('news')"><i class="fas fa-newspaper"></i> <span class="nav-text">NEWS</span></div>
-                <div class="nav-item" onclick="Route('channels')"><i class="fas fa-hashtag"></i> <span class="nav-text">CHANNELS</span></div>
-                <div class="nav-item" onclick="Route('dms')"><i class="fas fa-envelope"></i> <span class="nav-text">MESSAGES</span></div>
-                <div class="nav-item" onclick="Route('search')"><i class="fas fa-search"></i> <span class="nav-text">SEARCH</span></div>
-                <div class="nav-item" onclick="Route('profile')"><i class="fas fa-user-circle"></i> <span class="nav-text">PROFILE</span></div>
-                <div id="nav-admin" class="nav-item hidden" onclick="Route('admin')"><i class="fas fa-shield-alt" style="color:var(--warning);"></i> <span class="nav-text">ADMIN</span></div>
-                
-                <div style="flex:1;"></div>
-                <div class="nav-item" style="color:var(--danger);" onclick="Auth.logout()"><i class="fas fa-power-off"></i> <span class="nav-text">EXIT</span></div>
+                <div class="sidebar-header"><span style="color:#d600ff;">NEKO</span>CORE</div>
+                <div class="nav-group">
+                    <div class="nav-item active" onclick="Route('news')"><i class="fas fa-rss"></i> NEWS</div>
+                    <div class="nav-item" onclick="Route('channels')"><i class="fas fa-hashtag"></i> CHANNELS</div>
+                    <div class="nav-item" onclick="Route('dms')"><i class="fas fa-comments"></i> MESSAGES</div>
+                    <div class="nav-item" onclick="Route('search')"><i class="fas fa-search"></i> SEARCH</div>
+                </div>
+                <div class="nav-group bottom">
+                    <div id="nav-admin" class="nav-item hidden" onclick="Route('admin')"><i class="fas fa-shield-alt" style="color:#ff0055"></i> ADMIN</div>
+                    <div class="nav-item" onclick="Route('profile')"><i class="fas fa-user-circle"></i> PROFILE</div>
+                    <div class="nav-item" onclick="Auth.logout()"><i class="fas fa-power-off"></i> EXIT</div>
+                </div>
             </div>
 
-            <div class="content" style="height:100%; width:100%;">
-                
+            <div class="content-wrapper">
                 <div id="tab-news" class="tab-pane active">
-                    <div class="header">
-                        <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content"><div class="header-title" style="color:var(--warning);">NEWS FEED</div></div>
-                    </div>
-                    <div id="news-feed" class="messages"></div>
-                    <div id="news-input" class="input-bar hidden">
+                    <div class="top-bar"><div class="top-title">NEWS</div></div>
+                    <div id="news-feed" class="messages-container"></div>
+                    <div id="news-input" class="chat-input-area hidden">
                         <input type="text" id="news-msg-in" placeholder="Broadcast...">
-                        <button class="btn" style="width:40px; padding:0; border-radius:50%;" onclick="Chat.send('news')"><i class="fas fa-bullhorn"></i></button>
+                        <button class="btn-solid" style="width:50px;" onclick="Chat.send('news')"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
-
                 <div id="tab-channels" class="tab-pane">
-                    <div class="header">
-                        <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content">
-                            <div class="header-title">CHANNELS</div>
-                            <button class="btn" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="document.getElementById('modal-create').classList.add('open')">+</button>
-                        </div>
-                    </div>
-                    <div id="channel-list" style="overflow-y:auto; flex:1; padding:10px;"></div>
+                    <div class="top-bar"><div class="top-title">CHANNELS</div><i class="fas fa-plus" style="cursor:pointer; color:#d600ff; font-size:1.2rem;" onclick="document.getElementById('modal-create').classList.add('open')"></i></div>
+                    <div id="channel-list" class="list-container"></div>
                 </div>
-
                 <div id="tab-chat" class="tab-pane">
-                    <div class="header">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <button class="btn" style="width:auto; padding:5px 10px; font-size:0.7rem;" onclick="Route('channels')"><i class="fas fa-chevron-left"></i></button>
-                            <div id="chat-title" class="header-title">CHAT</div>
-                        </div>
-                    </div>
-                    <div id="chat-feed" class="messages"></div>
-                    <div class="input-bar">
-                        <label for="file-in" style="color:var(--dim); padding:10px;"><i class="fas fa-image fa-lg"></i></label>
-                        <input type="file" id="file-in" hidden accept="image/*">
+                    <div class="top-bar"><i class="fas fa-arrow-left" style="cursor:pointer;" onclick="Route('channels')"></i><div class="top-title" id="chat-title">CHAT</div></div>
+                    <div id="chat-feed" class="messages-container"></div>
+                    <div class="chat-input-area">
+                        <label for="file-in" style="cursor:pointer; color:#888;"><i class="fas fa-paperclip"></i></label>
+                        <input type="file" id="file-in" hidden multiple accept="image/*">
                         <input type="text" id="msg-in" placeholder="Message...">
-                        <button class="btn" style="width:40px; padding:0; border-radius:50%;" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button>
+                        <button class="btn-solid" style="width:50px;" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button>
                     </div>
                 </div>
-
-                <div id="tab-dms" class="tab-pane">
-                    <div class="header">
-                        <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content"><div class="header-title">MESSAGES</div></div>
-                    </div>
-                    <div id="dm-list" style="overflow-y:auto; flex:1; padding:10px;"></div>
-                </div>
-
-                <div id="tab-search" class="tab-pane">
-                    <div class="header">
-                        <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content"><div class="header-title">SEARCH</div></div>
-                    </div>
-                    <div class="input-bar" style="background:transparent; border:none;">
-                        <input type="text" id="search-in" placeholder="Find Agent..." oninput="Search.run()">
-                    </div>
-                    <div id="search-results" style="overflow-y:auto; flex:1; padding:10px;"></div>
-                </div>
-
+                <div id="tab-dms" class="tab-pane"><div class="top-bar"><div class="top-title">MESSAGES</div></div><div id="dm-list" class="list-container"></div></div>
+                <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="top-title">SEARCH</div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
+                
                 <div id="tab-profile" class="tab-pane">
-                    <div class="header">
-                        <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content"><div class="header-title">IDENTITY</div></div>
-                    </div>
-                    <div class="flex-col flex-center" style="flex:1; padding:20px; gap:20px;">
-                        <img id="my-avi" class="avatar" style="width:120px; height:120px; border:2px solid var(--secondary);">
-                        <label class="btn" style="width:auto; font-size:0.8rem;" for="avi-in">CHANGE PHOTO</label>
-                        <input type="file" id="avi-in" hidden accept="image/*">
-                        <div style="text-align:center;">
-                            <div id="my-id-badge" style="color:var(--dim); font-size:0.9rem; margin-bottom:5px;">ID: ???</div>
-                            <input type="text" id="my-nick" style="text-align:center; font-weight:bold; font-size:1.2rem; background:transparent; border:none; color:white;" placeholder="Codename">
+                    <div class="top-bar"><div class="top-title">EDITOR</div></div>
+                    <div class="admin-scroll-area"> <div class="p-20 flex-col" style="gap:15px;">
+                            <div style="background:#0e0e12; border:1px solid #333; border-radius:16px; overflow:hidden;">
+                                <div id="my-banner-prev" style="height:120px; background:#222; background-size:cover; background-position:center;"></div>
+                                <div style="padding:0 20px 20px 20px; text-align:center; margin-top:-40px;">
+                                    <img id="my-avi" style="width:80px; height:80px; border-radius:50%; border:4px solid #0e0e12; object-fit:cover; background:#000;">
+                                    <div id="my-id-badge" style="color:#666; font-family:monospace; margin-top:5px;">ID: ???</div>
+                                </div>
+                            </div>
+                            
+                            <div class="file-grid">
+                                <label class="file-zone" for="avi-in"><i class="fas fa-user"></i><span>Avatar</span></label>
+                                <label class="file-zone" for="banner-in"><i class="fas fa-image"></i><span>Banner</span></label>
+                            </div>
+                            <input type="file" id="avi-in" hidden accept="image/*">
+                            <input type="file" id="banner-in" hidden accept="image/*">
+                            
+                            <input type="text" id="my-nick" placeholder="Codename">
+                            <textarea id="my-bio" rows="3" placeholder="Bio..."></textarea>
+                            <button class="btn-solid" onclick="Profile.save()">SAVE CHANGES</button>
                         </div>
-                        <button class="btn" style="max-width:300px;" onclick="Profile.save()">UPDATE RECORD</button>
                     </div>
                 </div>
 
                 <div id="tab-admin" class="tab-pane">
-                    <div class="header">
-                        <i class="fas fa-bars mobile-menu-btn" onclick="UI.toggleMenu()"></i>
-                        <div class="header-content"><div class="header-title" style="color:var(--danger);">ROOT ACCESS</div></div>
-                    </div>
-                    <div id="admin-panel" style="padding:20px; overflow-y:auto;">
-                        <div id="super-admin-controls" class="hidden" style="margin-bottom:20px;">
+                    <div class="top-bar"><div class="top-title text-danger">ROOT</div></div>
+                    <div class="admin-scroll-area"> <div id="super-admin-controls" class="hidden mb-20">
                             <button class="btn-danger" onclick="Admin.nuke('news')">WIPE NEWS</button>
                         </div>
-                        <div id="admin-list" class="flex-col" style="gap:10px;"></div>
+                        <div id="admin-list" class="admin-grid"></div>
                     </div>
                 </div>
-
             </div>
-        </div>
-    </div>
-
-    <!-- MODALS -->
-    <div id="modal-create" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <div class="confirm-title">NEW CHANNEL</div>
-            <input type="text" id="new-ch-name" placeholder="Name">
-            <div style="margin:10px 0;"><label><input type="checkbox" id="new-ch-priv"> Private</label></div>
-            <input type="password" id="new-ch-pass" class="hidden" placeholder="Password">
-            <button class="btn" onclick="Channels.create()" style="margin-top:10px;">CREATE</button>
-            <button class="btn btn-danger" onclick="document.getElementById('modal-create').classList.remove('open')" style="margin-top:10px;">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="modal-pass" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <div class="confirm-title">LOCKED</div>
-            <input type="password" id="ch-auth-pass" placeholder="Password">
-            <button class="btn" onclick="Channels.auth()" style="margin-top:10px;">ENTER</button>
-            <button class="btn btn-danger" onclick="document.getElementById('modal-pass').classList.remove('open')" style="margin-top:10px;">CANCEL</button>
         </div>
     </div>
 
     <div id="modal-user" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <img id="u-avi" class="avatar" style="width:100px; height:100px; margin:0 auto 15px auto; border:2px solid var(--primary);">
-            <h3 id="u-name" style="margin:0; color:var(--primary);"></h3>
-            <div id="u-role" style="font-size:0.8rem; font-weight:bold; margin-bottom:5px;"></div>
-            <div class="flex-col" style="gap:10px;">
-                <button class="btn" onclick="Chat.startDM()">SEND MSG</button>
-                <button id="btn-block" class="btn btn-danger" onclick="Block.toggle()">BLOCK</button>
-            </div>
-            <button class="btn btn-danger" style="margin-top:10px; background:transparent; border:none;" onclick="document.getElementById('modal-user').classList.remove('open')">CLOSE</button>
-        </div>
-    </div>
-
-    <div id="modal-edit" class="modal-overlay">
-        <div class="modal-content glass-panel">
-            <div class="confirm-title">EDIT</div>
-            <textarea id="edit-text" rows="3"></textarea>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button class="btn" onclick="Chat.confirmEdit()">SAVE</button>
-                <button class="btn btn-danger" onclick="document.getElementById('modal-edit').classList.remove('open')">CANCEL</button>
+        <div class="modal-content profile-card-modal">
+            <div id="u-banner" class="p-banner"></div>
+            <div class="p-avi-wrapper"><img id="u-avi" class="p-avi"><div id="u-status" class="p-status"></div></div>
+            <div class="p-body">
+                <div id="u-name" class="p-name"></div>
+                <div id="u-id" class="p-id"></div>
+                <div id="u-badges" class="p-badges"></div>
+                <div id="u-role" class="p-role"></div>
+                <div class="p-actions">
+                    <button class="btn-solid" onclick="Chat.startDM()">MESSAGE</button>
+                    <button class="btn-danger" id="btn-block" onclick="Block.toggle()">BLOCK</button>
+                    <button class="btn-text" onclick="document.getElementById('modal-user').classList.remove('open')">CLOSE</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-img" class="modal-overlay" onclick="this.classList.remove('open')">
-        <img id="full-img" style="max-width:95%; max-height:90%; border-radius:12px; border:2px solid var(--secondary);">
+    <div id="modal-create" class="modal-overlay">
+        <div class="modal-box">
+            <h3>NEW CHANNEL</h3>
+            <div class="file-grid">
+                <label class="file-zone" for="new-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label>
+                <label class="file-zone" for="new-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label>
+            </div>
+            <input type="file" id="new-ch-avi" hidden accept="image/*">
+            <input type="file" id="new-ch-banner" hidden accept="image/*">
+
+            <input type="text" id="new-ch-name" placeholder="Name">
+            
+            <label class="toggle-wrapper">
+                <input type="checkbox" id="new-ch-priv" class="toggle-checkbox">
+                <div class="toggle-switch"></div>
+                <div class="toggle-label">Private Channel</div>
+            </label>
+
+            <input type="password" id="new-ch-pass" class="hidden" placeholder="Password">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-solid" onclick="Channels.create()">CREATE</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-create').classList.remove('open')">CANCEL</button>
+            </div>
+        </div>
     </div>
 
+    <div id="modal-channel-settings" class="modal-overlay">
+        <div class="modal-box">
+            <h3>CHANNEL SETTINGS</h3>
+            <div class="file-grid">
+                <label class="file-zone" for="edit-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label>
+                <label class="file-zone" for="edit-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label>
+            </div>
+            <input type="file" id="edit-ch-avi" hidden accept="image/*">
+            <input type="file" id="edit-ch-banner" hidden accept="image/*">
+
+            <input type="text" id="edit-ch-name" placeholder="Channel Name">
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+                <button class="btn-solid" onclick="Channels.saveSettings()">SAVE</button>
+                <button class="btn-danger" onclick="Channels.del()">DELETE CHANNEL</button>
+                <button class="btn-text" onclick="document.getElementById('modal-channel-settings').classList.remove('open')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pass" class="modal-overlay"><div class="modal-box"><h3>ACCESS</h3><input type="password" id="ch-auth-pass"><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.auth()">ENTER</button><button class="btn-danger" onclick="document.getElementById('modal-pass').classList.remove('open')">X</button></div></div></div>
+    <div id="modal-edit" class="modal-overlay"><div class="modal-box"><h3>EDIT</h3><textarea id="edit-text" rows="3"></textarea><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Chat.confirmEdit()">SAVE</button><button class="btn-danger" onclick="document.getElementById('modal-edit').classList.remove('open')">X</button></div></div></div>
+    <div id="modal-img" class="modal-overlay" onclick="this.classList.remove('open')"><img id="full-img" style="max-width:95%; max-height:90%; border-radius:12px; border:2px solid #d600ff;"></div>
+    <div id="custom-alert" class="modal-overlay"><div class="modal-box"><h3 id="alert-title"></h3><p id="alert-text" style="color:#aaa;"></p><button class="btn-solid" style="margin-top:20px;" onclick="document.getElementById('custom-alert').classList.remove('open')">OK</button></div></div>
+    <div id="custom-confirm" class="modal-overlay"><div class="modal-box"><h3 id="confirm-title"></h3><p id="confirm-text" style="color:#aaa;"></p><div style="display:flex; gap:10px; margin-top:20px;"><button id="btn-confirm-yes" class="btn-solid">YES</button><button class="btn-danger" onclick="UI.closeConfirm()">NO</button></div></div></div>
+
+    <script src="functions/config.js"></script>
+    <script src="functions/state.js"></script>
+    <script src="functions/utils.js"></script>
+    <script src="functions/ui.js"></script>
+    <script src="functions/profile.js"></script>
+    <script src="functions/chat.js"></script>
+    <script src="functions/channels.js"></script>
+    <script src="functions/search.js"></script>
+    <script src="functions/admin.js"></script>
+    <script src="functions/auth.js"></script>
+    <script src="functions/main.js"></script>
     <script>
-        const SUPER_ADMIN = "packemaker@mail.ru";
-        const CFG = { fb: { apiKey: "AIzaSyC_7hrzPrnjd3-XFsqas-2vHUJAJEfWxoQ", authDomain: "nekochat-ba3a9.firebaseapp.com", databaseURL: "https://nekochat-ba3a9-default-rtdb.europe-west1.firebasedatabase.app", projectId: "nekochat-ba3a9", storageBucket: "nekochat-ba3a9.firebasestorage.app", messagingSenderId: "117042257678", appId: "1:117042257678:web:bec3bbcc1eac974901c15f" } };
-
-        firebase.initializeApp(CFG.fb);
-        const db = firebase.database();
-        const auth = firebase.auth();
-        const State = { user: null, profile: null, chatRef: null, dmTarget: null, isReg: false, editKey: null, pendingCh: null };
-
-        const UI = {
-            toast: (msg, type='info') => {
-                const c = document.getElementById('toast-container');
-                const e = document.createElement('div'); e.className=`toast ${type}`;
-                e.innerHTML = `<i class="fas fa-info-circle"></i> <span>${msg}</span>`;
-                c.appendChild(e); setTimeout(()=>{e.style.opacity=0;setTimeout(()=>e.remove(),300)},3000);
-            },
-            alert: (title, text) => {
-                document.getElementById('alert-title').innerText = title;
-                document.getElementById('alert-text').innerText = text;
-                document.getElementById('custom-alert').classList.add('open');
-            },
-            confirm: (title, text, cb) => {
-                document.getElementById('confirm-title').innerText = title;
-                document.getElementById('confirm-text').innerText = text;
-                const btn = document.getElementById('btn-confirm-yes');
-                const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn);
-                newBtn.onclick = () => { document.getElementById('custom-confirm').classList.remove('open'); cb(); };
-                document.getElementById('custom-confirm').classList.add('open');
-            },
-            closeConfirm: () => document.getElementById('custom-confirm').classList.remove('open'),
-            toggleMenu: () => document.getElementById('sidebar').classList.toggle('open')
-        };
-
-        const Scene = {
-            init: () => {
-                const scene = new THREE.Scene();
-                scene.fog = new THREE.FogExp2(0x05000a, 0.03);
-                const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-                camera.position.z = 3.5;
-                const renderer = new THREE.WebGLRenderer({alpha:true, antialias:true});
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                document.body.prepend(renderer.domElement);
-
-                const group = new THREE.Group(); scene.add(group);
-                const mat = new THREE.MeshBasicMaterial({color: 0xb026ff, wireframe: true, transparent:true, opacity:0.3});
-                group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), mat));
-                const eG = new THREE.ConeGeometry(0.4, 0.9, 4);
-                const e1 = new THREE.Mesh(eG, mat); e1.position.set(0.6,0.8,-0.2); e1.rotation.set(-0.2,0,-0.4); group.add(e1);
-                const e2 = new THREE.Mesh(eG, mat); e2.position.set(-0.6,0.8,-0.2); e2.rotation.set(-0.2,0,0.4); group.add(e2);
-
-                const pG = new THREE.BufferGeometry();
-                const pArr = new Float32Array(3000);
-                for(let i=0; i<3000; i++) pArr[i] = (Math.random()-0.5)*15;
-                pG.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
-                const stars = new THREE.Points(pG, new THREE.PointsMaterial({color:0x00ffff, size:0.03}));
-                scene.add(stars);
-
-                const anim = () => {
-                    requestAnimationFrame(anim);
-                    group.rotation.y += 0.003; group.rotation.x = Math.sin(Date.now()*0.001)*0.1;
-                    stars.rotation.y -= 0.0005;
-                    renderer.render(scene, camera);
-                };
-                anim();
-                window.onresize = () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
-            }
-        };
-
-        const Auth = {
-            init: () => {
-                auth.onAuthStateChanged(u => {
-                    if(u) {
-                        db.ref('users/'+u.uid).on('value', s => {
-                            if(!s.exists()) { auth.signOut(); return; }
-                            const v = s.val();
-                            if(v.isBanned) { UI.alert("ERROR", "ACCOUNT BANNED"); auth.signOut(); return; }
-                            State.user = u; State.profile = v;
-                            if(u.email === SUPER_ADMIN && v.role !== 'super') db.ref('users/'+u.uid).update({role:'super'});
-
-                            document.getElementById('loader').classList.add('hidden');
-                            document.getElementById('view-auth').classList.add('hidden');
-                            document.getElementById('view-main').classList.remove('hidden');
-                            if(v.role === 'admin' || v.role === 'super') document.getElementById('nav-admin').classList.remove('hidden');
-                            
-                            Chat.toNews(); Channels.load(); Admin.load();
-                            document.getElementById('my-nick').value = v.displayName;
-                            document.getElementById('my-avi').src = v.avatar;
-                            document.getElementById('my-id-badge').innerText = "ID: " + v.shortId;
-                        });
-                    } else {
-                        document.getElementById('loader').classList.add('hidden');
-                        document.getElementById('view-auth').classList.remove('hidden');
-                    }
-                });
-            },
-            toggle: () => { State.isReg=!State.isReg; document.getElementById('auth-nick').style.display=State.isReg?'block':'none'; },
-            submit: () => {
-                const e=document.getElementById('auth-email').value, p=document.getElementById('auth-pass').value, n=document.getElementById('auth-nick').value;
-                if(!e||!p) return UI.toast("Missing info", "error");
-                if(State.isReg) {
-                    if(!n) return UI.toast("Codename required", "error");
-                    auth.createUserWithEmailAndPassword(e,p).then(c=>{
-                        const sid = '#'+c.user.uid.substr(0,4).toUpperCase();
-                        db.ref('users/'+c.user.uid).set({displayName:n, email:e, avatar:`https://robohash.org/${c.user.uid}`, shortId:sid, role:'user'});
-                        UI.alert("SUCCESS", "Account Created!");
-                    }).catch(err=>UI.alert("ERROR", err.message));
-                } else auth.signInWithEmailAndPassword(e,p).catch(err=>UI.alert("LOGIN FAILED", err.message));
-            },
-            reset: () => {
-                const e = document.getElementById('auth-email').value;
-                if(e) UI.confirm("RESET", "Send reset link?", () => auth.sendPasswordResetEmail(e).then(()=>UI.toast("Link Sent", "success")));
-                else UI.toast("Enter Email", "error");
-            },
-            logout: () => auth.signOut().then(()=>location.reload())
-        };
-
-        window.Route = (t) => {
-            document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
-            document.querySelectorAll('.tab-pane').forEach(e=>e.classList.remove('active'));
-            const map = {'news':0,'channels':1,'dms':2,'search':3,'profile':4,'admin':5};
-            if(document.querySelectorAll('.nav-item')[map[t]]) document.querySelectorAll('.nav-item')[map[t]].classList.add('active');
-            document.getElementById('tab-'+t).classList.add('active');
-            document.getElementById('sidebar').classList.remove('open'); 
-            if(t==='dms') Chat.loadDMs();
-        };
-
-        const Chat = {
-            toNews: () => {
-                const isAdmin = State.profile.role === 'admin' || State.profile.role === 'super';
-                document.getElementById('news-input').classList.toggle('hidden', !isAdmin);
-                Chat.listen(db.ref('news'), 'news-feed');
-            },
-            send: (type) => {
-                const id = type==='news' ? 'news-msg-in' : 'msg-in';
-                const txt = document.getElementById(id).value.trim();
-                const file = document.getElementById('file-in').files[0];
-                if(!txt && !file) return;
-                
-                const push = (img) => {
-                    State.chatRef.push({
-                        uid: State.user.uid, user: State.profile.displayName, avatar: State.profile.avatar, role: State.profile.role,
-                        text: txt, image: img||null, ts: firebase.database.ServerValue.TIMESTAMP, shortId: State.profile.shortId
-                    });
-                    document.getElementById(id).value = ''; document.getElementById('file-in').value = '';
-                };
-                if(file) resize(file, 1024, push); else push(null); 
-            },
-            del: k => UI.confirm("DELETE MESSAGE", "Permanently delete this message?", () => State.chatRef.child(k).remove()),
-            editOpen: k => {
-                State.editKey = k;
-                State.chatRef.child(k).once('value').then(s => {
-                    document.getElementById('edit-text').value = s.val().text;
-                    document.getElementById('modal-edit').classList.add('open');
-                });
-            },
-            confirmEdit: () => {
-                const t = document.getElementById('edit-text').value.trim();
-                if(State.editKey && t) State.chatRef.child(State.editKey).update({text:t});
-                document.getElementById('modal-edit').classList.remove('open');
-            },
-            close: () => Route('channels'),
-            loadDMs: () => {
-                const l = document.getElementById('dm-list'); l.innerHTML = '';
-                db.ref('dms').once('value', s => {
-                    s.forEach(c => {
-                        if(c.key.includes(State.user.uid)) {
-                            const other = c.key.split('_').find(i => i !== State.user.uid);
-                            db.ref('users/'+other).once('value', us => {
-                                const u = us.val();
-                                const d = document.createElement('div'); d.className='list-item';
-                                d.innerHTML = `<img src="${u.avatar}" class="avatar"><div><b>${u.displayName}</b></div>`;
-                                d.onclick = () => { State.dmTarget = other; State.dmTargetName = u.displayName; Chat.startDM(); };
-                                l.appendChild(d);
-                            });
-                        }
-                    });
-                });
-            },
-            startDM: () => {
-                if(!State.dmTarget) return;
-                const ids = [State.user.uid, State.dmTarget].sort();
-                document.getElementById('modal-user').classList.remove('open');
-                document.getElementById('chat-title').innerText = document.getElementById('u-name').innerText;
-                Route('chat');
-                Chat.listen(db.ref('dms/'+ids.join('_')), 'chat-feed');
-            },
-            listen: (ref, elId) => {
-                const feed = document.getElementById(elId); feed.innerHTML = '';
-                if(State.chatRef) State.chatRef.off();
-                State.chatRef = ref;
-                const myRole = State.profile.role;
-
-                ref.limitToLast(50).on('child_added', s => {
-                    const d = s.val(), key = s.key;
-                    const isMine = d.uid === State.user.uid;
-                    const div = document.createElement('div');
-                    div.id = 'msg-'+key;
-                    div.className = `msg ${isMine?'mine':''} ${d.role==='super'?'super':(d.role==='admin'?'admin':'')}`;
-                    
-                    let acts = '';
-                    let canDelete = isMine || myRole === 'super' || (myRole === 'admin' && d.role === 'user');
-                    if(isMine) acts += `<i class="fas fa-pen action-icon" onclick="Chat.editOpen('${key}')"></i>`;
-                    if(canDelete) acts += `<i class="fas fa-trash action-icon del" onclick="Chat.del('${key}')"></i>`;
-
-                    let roleBadge = '';
-                    if(d.role === 'super') roleBadge = '<span class="role-badge role-super">SUPER ADMIN</span>';
-                    else if(d.role === 'admin') roleBadge = '<span class="role-badge role-admin">ADMIN</span>';
-                    else if(d.role === 'tester') roleBadge = '<span class="role-badge role-tester">TESTER</span>';
-                    else roleBadge = '<span class="role-badge role-user">USER</span>';
-
-                    div.innerHTML = `
-                        ${acts ? `<div class="msg-actions">${acts}</div>` : ''}
-                        <img src="${d.avatar}" class="avatar" onclick="Profile.view('${d.uid}')">
-                        <div class="bubble">
-                            <div class="msg-sender">${d.user} ${roleBadge}</div>
-                            <div class="msg-text">${safe(d.text)}</div>
-                            ${d.image ? `<img src="${d.image}" class="msg-img" onclick="showImg(this.src)">` : ''}
-                        </div>
-                    `;
-                    feed.appendChild(div); feed.scrollTop = feed.scrollHeight;
-                });
-                
-                ref.on('child_changed', s => {
-                    const el = document.getElementById('msg-'+s.key);
-                    if(el) el.querySelector('.msg-text').innerText = s.val().text;
-                });
-                ref.on('child_removed', s => {
-                    const el = document.getElementById('msg-'+s.key);
-                    if(el) el.remove();
-                });
-            }
-        };
-
-        const Channels = {
-            create: () => {
-                const n = document.getElementById('new-ch-name').value;
-                if(!n) return;
-                const p = document.getElementById('new-ch-priv').checked ? document.getElementById('new-ch-pass').value : null;
-                db.ref('channels').push({name:n, pass:p, creator:State.user.uid});
-                document.getElementById('modal-create').classList.remove('open');
-            },
-            load: () => {
-                db.ref('channels').on('value', s => {
-                    const l = document.getElementById('channel-list'); l.innerHTML='';
-                    s.forEach(c => {
-                        const v = c.val();
-                        const d = document.createElement('div'); d.className='list-item';
-                        const lock = v.pass ? '<i class="fas fa-lock"></i>' : '#';
-                        let del = '';
-                        if(State.profile.role === 'super' || State.profile.role === 'admin') {
-                            del = `<div class="list-actions"><i class="fas fa-trash" style="color:var(--danger);" onclick="event.stopPropagation(); Channels.del('${c.key}')"></i></div>`;
-                        }
-                        
-                        d.innerHTML = `<span style="flex:1;">${lock} ${v.name}</span> ${del}`;
-                        d.onclick = () => {
-                            if(v.pass) { State.pendingCh={id:c.key, name:v.name, pass:v.pass}; document.getElementById('modal-pass').classList.add('open'); }
-                            else { document.getElementById('chat-title').innerText='# '+v.name; Route('chat'); Chat.listen(db.ref('channels_msg/'+c.key), 'chat-feed'); }
-                        };
-                        l.appendChild(d);
-                    });
-                });
-            },
-            auth: () => {
-                if(document.getElementById('ch-auth-pass').value === State.pendingCh.pass) {
-                    document.getElementById('modal-pass').classList.remove('open');
-                    document.getElementById('chat-title').innerText='# '+State.pendingCh.name;
-                    Route('chat'); Chat.listen(db.ref('channels_msg/'+State.pendingCh.id), 'chat-feed');
-                } else UI.toast("Wrong Pass", "error");
-            },
-            del: (key) => UI.confirm("DELETE CHANNEL", "Remove this channel?", () => db.ref('channels/'+key).remove())
-        };
-
-        const Admin = {
-            load: () => {
-                if(State.profile.role === 'super') document.getElementById('super-admin-controls').classList.remove('hidden');
-                db.ref('users').on('value', s => {
-                    const l = document.getElementById('admin-list'); l.innerHTML='';
-                    s.forEach(c => {
-                        const u = c.val(), uid = c.key;
-                        if(u.email === SUPER_ADMIN) return;
-                        const d = document.createElement('div'); d.className='admin-user-card';
-                        
-                        let ctrls = '';
-                        if (State.profile.role === 'super') {
-                            if(u.role !== 'admin') ctrls += `<button class="btn-success" style="padding:2px 6px; font-size:0.7rem;" onclick="Admin.role('${uid}','admin')">OP</button>`;
-                            else ctrls += `<button class="btn-danger" style="padding:2px 6px; font-size:0.7rem;" onclick="Admin.role('${uid}','user')">DEOP</button>`;
-                            ctrls += `<button class="btn-danger" style="padding:2px 6px; font-size:0.7rem; margin-left:5px;" onclick="Admin.rm('${uid}')">DEL</button>`;
-                        }
-                        if (State.profile.role === 'super' || (State.profile.role === 'admin' && u.role === 'user')) {
-                            ctrls += `<button class="btn-danger" style="padding:2px 6px; font-size:0.7rem; margin-left:5px;" onclick="Admin.mod('${uid}','isBanned',${!u.isBanned})">${u.isBanned?'UNBAN':'BAN'}</button>`;
-                            // New: Tester button
-                            if(u.role !== 'tester' && u.role !== 'admin' && u.role !== 'super') {
-                                ctrls += `<button class="btn-warn" style="padding:2px 6px; font-size:0.7rem; margin-left:5px;" onclick="Admin.role('${uid}','tester')">TESTER</button>`;
-                            }
-                        }
-
-                        d.innerHTML = `<div><b>${u.displayName}</b> <span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span><br><small style="color:#888">${u.email}</small></div><div class="admin-controls">${ctrls}</div>`;
-                        l.appendChild(d);
-                    });
-                });
-            },
-            mod: (u,k,v) => UI.confirm("ACTION", "Change status?", () => db.ref('users/'+u).update({[k]:v})),
-            role: (u,r) => UI.confirm("ROLE", "Set role to "+r+"?", () => db.ref('users/'+u).update({role:r})),
-            rm: (u) => UI.confirm("DELETE", "Delete user?", () => db.ref('users/'+u).remove()),
-            nuke: (path) => UI.confirm("NUKE", "Delete all?", () => db.ref(path).remove().then(()=>UI.toast("WIPED", "success")))
-        };
-
-        const Profile = {
-            save: () => {
-                const n = document.getElementById('my-nick').value;
-                const i = document.getElementById('avi-in').files[0];
-                if(i) resize(i, 256, url => db.ref('users/'+State.user.uid).update({displayName:n, avatar:url}).then(()=>UI.toast("Saved","success")));
-                else db.ref('users/'+State.user.uid).update({displayName:n}).then(()=>UI.toast("Saved","success"));
-            },
-            view: (uid) => {
-                db.ref('users/'+uid).once('value', s => {
-                    const u = s.val();
-                    document.getElementById('u-name').innerText = u.displayName;
-                    document.getElementById('u-avi').src = u.avatar;
-                    document.getElementById('u-role').innerText = u.role ? u.role.toUpperCase() : 'USER';
-                    State.dmTarget = uid; 
-                    Block.check(uid).then(b => document.getElementById('btn-block').innerText = b ? "UNBLOCK" : "BLOCK");
-                    document.getElementById('modal-user').classList.add('open');
-                });
-            }
-        };
-
-        const Block = {
-            toggle: () => {
-                const ref = db.ref('users/'+State.user.uid+'/blocked/'+State.dmTarget);
-                ref.once('value', s => {
-                    if(s.exists()) { ref.remove(); UI.toast("Unblocked"); document.getElementById('btn-block').innerText="BLOCK"; }
-                    else { ref.set(true); UI.toast("Blocked"); document.getElementById('btn-block').innerText="UNBLOCK"; }
-                });
-            },
-            check: t => db.ref('users/'+t+'/blocked/'+State.user.uid).once('value').then(s=>s.exists())
-        };
-
-        const Search = {
-            run: () => {
-                const q = document.getElementById('search-in').value.toLowerCase();
-                const l = document.getElementById('search-results'); l.innerHTML = '';
-                if(q.length<2) return;
-                db.ref('users').once('value', s => {
-                    s.forEach(c => {
-                        const u = c.val();
-                        if(u.displayName.toLowerCase().includes(q)) {
-                            const d = document.createElement('div'); d.className='list-item';
-                            d.innerHTML = `<img src="${u.avatar}" class="avatar"> <b>${u.displayName}</b>`;
-                            d.onclick = () => Profile.view(c.key);
-                            l.appendChild(d);
-                        }
-                    });
-                });
-            }
-        };
-
-        // UI BINDS
-        document.getElementById('new-ch-priv').onchange = e => {
-            if(e.target.checked) document.getElementById('new-ch-pass').classList.remove('hidden');
-            else document.getElementById('new-ch-pass').classList.add('hidden');
-        };
-        function showImg(s){ document.getElementById('full-img').src=s; document.getElementById('modal-img').classList.add('open'); }
-        function safe(t){ return t ? t.replace(/</g,'&lt;') : ''; }
-        function resize(f,m,c) { if(!f)return; const r=new FileReader(); r.onload=e=>{ const i=new Image(); i.onload=()=>{ const cv=document.createElement('canvas'); let w=i.width,h=i.height; if(w>m){h*=m/w;w=m;} cv.width=w;cv.height=h; cv.getContext('2d').drawImage(i,0,0,w,h); c(cv.toDataURL('image/jpeg',0.7)); }; i.src=e.target.result; }; r.readAsDataURL(f); }
-
-        Scene.init(); Auth.init(); Channels.load();
+        document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);
     </script>
 </body>
 </html>
