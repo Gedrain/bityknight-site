@@ -1,14 +1,16 @@
 const State = {
-    user: null,    // Firebase User
-    profile: null, // DB User Data
-    chatRef: null, // Current Firebase Ref for chat listener
-    dmTarget: null, // Current DM Target UID
-    pendingCh: null, // Channel trying to enter
-    isReg: false, // Login/Reg switch state
+    user: null,    // Текущий пользователь {uid: '...', email: '...'}
+    profile: null, // Полные данные пользователя
     
-    // Хранит режим чата ('channel' или 'dm'), чтобы кнопка назад знала куда идти
-    chatMode: 'channels', 
+    activeSubscription: null, // Хранит функцию отписки от чата
+    
+    dmTarget: null, // ID собеседника в ЛС
+    pendingCh: null, // Канал, в который пытаемся войти (для ввода пароля)
+    isReg: false, // Режим регистрации/входа
+    
+    chatMode: 'channels', // 'channels' или 'dm'
+    currentChannelId: null,
 
-    // Хранит ID каналов, в которые мы уже ввели пароль в этой сессии
+    // Хранит ID каналов, куда мы ввели пароль
     unlockedChannels: new Set()
 };

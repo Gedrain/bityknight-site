@@ -1,6 +1,14 @@
-const SUPER_ADMIN = "packemaker@mail.ru";
-const CFG = { fb: { apiKey: "AIzaSyC_7hrzPrnjd3-XFsqas-2vHUJAJEfWxoQ", authDomain: "nekochat-ba3a9.firebaseapp.com", databaseURL: "https://nekochat-ba3a9-default-rtdb.europe-west1.firebasedatabase.app", projectId: "nekochat-ba3a9", storageBucket: "nekochat-ba3a9.firebasestorage.app", messagingSenderId: "117042257678", appId: "1:117042257678:web:bec3bbcc1eac974901c15f" } };
+// Адрес твоего VDS сервера
+const SERVER_URL = "http://45.150.8.5/"; 
 
-firebase.initializeApp(CFG.fb);
-const db = firebase.database();
-const auth = firebase.auth();
+// Инициализация PocketBase
+const pb = new PocketBase(SERVER_URL);
+
+// Отключаем авто-отмену (чтобы чат не прерывался)
+pb.autoCancellation(false);
+
+// Глобальный доступ
+window.pb = pb;
+window.SERVER_URL = SERVER_URL;
+
+console.log("NEKO PROTOCOL: Linked to Node " + SERVER_URL);

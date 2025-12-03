@@ -1,11 +1,11 @@
 window.Settings = {
     croppedData: { avi: null, ban: null },
-
     defaultTheme: { accent: '#d600ff', bg: '#05000a', panel: '#0e0e12' },
     
     initListeners: () => {
         const handleUpload = (file, ratio, callback) => {
             if (!file) return;
+            // PocketBase отлично ест GIF, не нужно их кропать если не хочешь
             if (file.type.toLowerCase().includes('gif')) {
                 const reader = new FileReader();
                 reader.onload = (e) => callback(e.target.result);
@@ -21,8 +21,7 @@ window.Settings = {
         if(aviIn) aviIn.onchange = e => {
             handleUpload(e.target.files[0], 1, (base64) => {
                 Settings.croppedData.avi = base64;
-                const el = document.getElementById('my-avi');
-                if(el) el.src = base64;
+                document.getElementById('my-avi').src = base64;
                 aviIn.value = '';
             });
         };
@@ -31,14 +30,13 @@ window.Settings = {
         if(banIn) banIn.onchange = e => {
             handleUpload(e.target.files[0], 2.5, (base64) => {
                 Settings.croppedData.ban = base64;
-                const el = document.getElementById('my-banner-prev');
-                if(el) el.style.backgroundImage = `url(${base64})`;
+                document.getElementById('my-banner-prev').style.backgroundImage = `url(${base64})`;
                 banIn.value = '';
             });
         };
     },
 
-    save: () => {
+    save: async () => {
         const n = document.getElementById('my-nick').value.trim();
         const bio = document.getElementById('my-bio').value.trim();
         const prefix = document.getElementById('set-prefix').value.trim();
@@ -46,22 +44,41 @@ window.Settings = {
 
         if(!n) return UI.toast("Name required", "error");
         
-        const update = { 
-            displayName: n, bio: bio, prefix: prefix, prefixColor: prefixColor,
-            theme: {
-                accent: document.getElementById('set-accent').value,
-                bg: document.getElementById('set-bg').value,
-                panel: document.getElementById('set-panel').value
-            }
+        // Используем FormData для отправки файлов
+        const formData = new FormData();
+        formData.append('nickname', n); // Используем nickname, поле name системное
+        formData.append('name', n);
+        formData.append('bio', bio);
+        formData.append('prefix', prefix);
+        formData.append('prefixColor', prefixColor);
+        
+        // Тему сохраняем как JSON строку в поле theme (если его создали) 
+        // или просто локально, так как PB не любит произвольные JSON объекты в полях
+        const theme = {
+            accent: document.getElementById('set-accent').value,
+            bg: document.getElementById('set-bg').value,
+            panel: document.getElementById('set-panel').value
         };
+        // Сохраним тему локально для надежности
+        localStorage.setItem('neko_theme', JSON.stringify(theme));
 
-        if(Settings.croppedData.avi) update.avatar = Settings.croppedData.avi;
-        if(Settings.croppedData.ban) update.banner = Settings.croppedData.ban;
+        if(Settings.croppedData.avi) {
+            formData.append('avatar', dataURLtoFile(Settings.croppedData.avi, 'avatar.jpg'));
+        }
+        if(Settings.croppedData.ban) {
+            formData.append('banner', dataURLtoFile(Settings.croppedData.ban, 'banner.jpg'));
+        }
 
-        db.ref('users/'+State.user.uid).update(update).then(()=>{
+        try {
+            const record = await pb.collection('users').update(State.user.uid, formData);
+            State.profile = record;
             UI.toast("Settings Saved","success");
             Settings.croppedData = { avi: null, ban: null };
-        });
+            Settings.applyTheme(theme);
+        } catch(err) {
+            console.error(err);
+            UI.toast("Save failed", "error");
+        }
     },
 
     previewTheme: () => {
@@ -75,12 +92,9 @@ window.Settings = {
 
     resetTheme: () => {
         const t = Settings.defaultTheme;
-        const elAcc = document.getElementById('set-accent');
-        const elBg = document.getElementById('set-bg');
-        const elPan = document.getElementById('set-panel');
-        if(elAcc) elAcc.value = t.accent;
-        if(elBg) elBg.value = t.bg;
-        if(elPan) elPan.value = t.panel;
+        document.getElementById('set-accent').value = t.accent;
+        document.getElementById('set-bg').value = t.bg;
+        document.getElementById('set-panel').value = t.panel;
         Settings.applyTheme(t);
     },
 
@@ -118,26 +132,25 @@ window.Settings = {
         if(window.Background && window.Background.updateColor) { window.Background.updateColor(t.bg, t.accent); }
     },
 
-    view: (uid) => {
+    view: async (uid) => {
         if(!uid) return;
-        console.log("Opening profile for:", uid);
-
-        db.ref('users/'+uid).once('value', s => {
-            const u = s.val();
-            if(!u) return console.error("User not found");
+        
+        try {
+            const u = await pb.collection('users').getOne(uid);
             
-            // Вспомогательная функция для безопасной вставки
             const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
             const setSrc = (id, val) => { const el = document.getElementById(id); if(el) el.src = val; };
-            const setBg = (id, val) => { const el = document.getElementById(id); if(el) el.style.backgroundImage = val; };
+            
+            const avatarUrl = u.avatar ? pb.files.getUrl(u, u.avatar) : 'https://via.placeholder.com/100';
+            const bannerUrl = u.banner ? pb.files.getUrl(u, u.banner) : 'none';
 
-            // 1. Основные данные
-            setBg('u-banner', u.banner ? `url(${u.banner})` : 'none');
-            setSrc('u-avi', u.avatar || 'https://via.placeholder.com/100');
-            setVal('u-name', u.displayName);
+            const bannerEl = document.getElementById('u-banner');
+            if(bannerEl) bannerEl.style.backgroundImage = bannerUrl === 'none' ? 'none' : `url(${bannerUrl})`;
+            
+            setSrc('u-avi', avatarUrl);
+            setVal('u-name', u.nickname || u.name || "User");
             setVal('u-id', u.shortId);
             
-            // 2. Префикс
             const prefContainer = document.getElementById('u-prefix-container');
             if(prefContainer) {
                 if (u.prefix) {
@@ -145,31 +158,20 @@ window.Settings = {
                 } else { prefContainer.innerHTML = ''; }
             }
             
-            // 3. Статус Онлайн (с проверкой на старый и новый ID)
             const dot = document.getElementById('u-status-indicator') || document.getElementById('u-status');
             if(dot) {
                 const activeClass = dot.id === 'u-status-indicator' ? 'p-status-dot' : 'p-status';
                 dot.className = u.status === 'online' ? `${activeClass} online` : `${activeClass}`;
             }
             
-            // 4. Роль
             let rName = 'USER';
             if(u.role === 'admin') rName = 'ADMINISTRATOR';
             if(u.role === 'super') rName = 'ROOT ACCESS';
             setVal('u-role', rName);
             
-            // 5. Дата регистрации (безопасно)
             const regEl = document.getElementById('u-reg-date');
-            if(regEl) {
-                if(u.createdAt) {
-                    const d = new Date(u.createdAt);
-                    regEl.innerText = d.toLocaleDateString();
-                } else {
-                    regEl.innerText = "N/A";
-                }
-            }
+            if(regEl) regEl.innerText = new Date(u.created).toLocaleDateString();
             
-            // 6. Последний онлайн
             const lsEl = document.getElementById('u-last-seen');
             if(lsEl) {
                 if(u.status === 'online') {
@@ -182,7 +184,6 @@ window.Settings = {
                 }
             }
 
-            // 7. Ачивки
             const badgesEl = document.getElementById('u-badges');
             if(badgesEl) {
                 badgesEl.innerHTML = '';
@@ -197,19 +198,14 @@ window.Settings = {
 
             State.dmTarget = uid; 
             
-            // Блокировка (если модуль Block загружен)
-            if(window.Block && window.Block.check) {
-                Block.check(uid).then(b => {
-                    const btn = document.getElementById('btn-block');
-                    if(btn) btn.innerText = b ? "UNBLOCK" : "BLOCK";
-                });
-            }
-            
             const modal = document.getElementById('modal-user');
             if(modal) modal.classList.add('open');
-        });
+
+        } catch(e) {
+            console.error(e);
+            UI.toast("User not found", "error");
+        }
     }
 };
-
 window.Profile = window.Settings;
 document.addEventListener('DOMContentLoaded', () => { Settings.initListeners(); });

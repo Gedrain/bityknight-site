@@ -1,5 +1,4 @@
 const UI = {
-    // ... (код уведомлений, toast, alert, confirm без изменений) ...
     notify: (title, body, type='info', iconUrl=null) => {
         const c = document.getElementById('toast-container');
         const t = document.createElement('div');
@@ -62,35 +61,21 @@ const UI = {
         ov.classList.toggle('open');
     },
 
-    // --- CROPPER MODULE (UPDATED) ---
     Crop: {
-        instance: null,
-        onFinish: null,
-        onCancel: null,
+        instance: null, onFinish: null, onCancel: null,
 
         start: (file, aspectRatio, finishCb, cancelCb) => {
             if(!file) return;
-            
-            // Мы убрали проверку на GIF, чтобы разрешить их обрезку.
-            // Примечание: GIF станет статичным после обрезки.
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = document.getElementById('crop-img');
                 img.src = e.target.result;
-                
                 document.getElementById('modal-cropper').classList.add('open');
                 UI.Crop.onFinish = finishCb;
                 UI.Crop.onCancel = cancelCb;
-
                 if(UI.Crop.instance) UI.Crop.instance.destroy();
-                
                 UI.Crop.instance = new Cropper(img, {
-                    aspectRatio: aspectRatio, 
-                    viewMode: 1,
-                    autoCropArea: 1,
-                    background: false,
-                    dragMode: 'move'
+                    aspectRatio: aspectRatio, viewMode: 1, autoCropArea: 1, background: false, dragMode: 'move'
                 });
             };
             reader.readAsDataURL(file);
@@ -98,26 +83,17 @@ const UI = {
 
         finish: () => {
             if(!UI.Crop.instance) return;
-            // Получаем результат
-            const canvas = UI.Crop.instance.getCroppedCanvas({
-                maxWidth: 1024, maxHeight: 1024, fillColor: '#000000'
-            });
-            // Конвертируем в JPG (для оптимизации)
+            const canvas = UI.Crop.instance.getCroppedCanvas({ maxWidth: 1024, maxHeight: 1024, fillColor: '#000000' });
             const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            
             document.getElementById('modal-cropper').classList.remove('open');
             UI.Crop.instance.destroy();
             UI.Crop.instance = null;
-            
             if(UI.Crop.onFinish) UI.Crop.onFinish(dataUrl);
         },
 
         cancel: () => {
             document.getElementById('modal-cropper').classList.remove('open');
-            if(UI.Crop.instance) {
-                UI.Crop.instance.destroy();
-                UI.Crop.instance = null;
-            }
+            if(UI.Crop.instance) { UI.Crop.instance.destroy(); UI.Crop.instance = null; }
             if(UI.Crop.onCancel) UI.Crop.onCancel();
         }
     }

@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v53</title>
+    <title>NekoCore v53 (PB)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -22,9 +22,8 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script src="functions/pocketbase.js"></script>
 </head>
 <body>
     <div id="toast-container"></div>
@@ -62,23 +61,18 @@
                 const text = logo.querySelector('.glitch-text');
                 let i = 0;
 
-                // 1. Печатаем логи (быстро)
                 const interval = setInterval(() => {
                     if (i >= BootLoader.logs.length) {
                         clearInterval(interval);
-                        // 2. Очищаем экран и показываем лого
                         setTimeout(() => {
                             term.style.display = 'none';
                             logo.style.opacity = '1';
-                            
-                            // 3. Ждем и делаем ГЛИТЧ исчезновение
                             setTimeout(() => {
                                 text.classList.add('glitch-out');
-                                // 4. Полностью убираем лоадер
                                 setTimeout(() => {
                                     document.getElementById('loader').classList.add('hidden');
-                                }, 400); // Время совпадает с glitch-fade-out
-                            }, 1500); // Сколько висит логотип (1.5 сек)
+                                }, 400); 
+                            }, 1500); 
                         }, 200);
                         return;
                     }
@@ -96,11 +90,9 @@
                     p.innerText = txt;
                     term.appendChild(p);
                     i++;
-                }, 100); // Скорость строк (100мс)
+                }, 100); 
             }
         };
-        
-        // Запускаем анимацию сразу
         window.addEventListener('load', BootLoader.run);
     </script>
 
@@ -151,6 +143,7 @@
                 </div>
 
                 <div id="tab-dms" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">MESSAGES</div><div></div></div><div id="dm-list" class="list-container"></div></div>
+                
                 <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
 
                 <div id="tab-settings" class="tab-pane">
@@ -196,6 +189,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
             </div>
         </div>
@@ -269,29 +263,24 @@
     <script src="functions/admin.js"></script>
     <script src="functions/auth.js"></script>
     <script src="functions/main.js"></script>
+    
     <script>
         document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);
         
-        // AUTO UPDATE LOGIC
+        // PWA SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 let refreshing;
-                
-                // Слушаем событие controllerchange - оно срабатывает, когда новый SW берет управление
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     if (refreshing) return;
                     refreshing = true;
-                    window.location.reload(); // Перезагружаем страницу для обновления
+                    window.location.reload(); 
                 });
-
                 navigator.serviceWorker.register('./sw.js').then(reg => {
-                    // Проверка обновлений при загрузке
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // Новая версия найдена и установлена
-                                // Так как в sw.js есть skipWaiting(), перезагрузка произойдет через controllerchange
                                 console.log('New update available.');
                             }
                         });

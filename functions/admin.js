@@ -1,48 +1,44 @@
 window.Admin = {
-    load: () => {
-        // Проверка прав
+    load: async () => {
         if (State.profile.role !== 'admin' && State.profile.role !== 'super') return;
 
         if (State.profile.role === 'super') {
             document.getElementById('super-admin-controls').classList.remove('hidden');
         }
-
-        db.ref('users').on('value', s => {
+        
+        try {
             const list = document.getElementById('admin-list'); 
-            if (!list) return; // Защита
+            list.innerHTML = 'Loading...';
+            
+            // Получаем всех пользователей
+            const users = await pb.collection('users').getFullList({ sort: '-created' });
             
             list.innerHTML = '';
             list.className = 'admin-grid';
             
-            s.forEach(c => {
-                const u = c.val(); 
-                const uid = c.key;
-                
-                // Убрана проверка u.email === SUPER_ADMIN, теперь суперы видны всем админам
-                if (uid === State.user.uid) return;
+            users.forEach(u => {
+                if (u.id === State.user.uid) return;
 
                 const card = document.createElement('div'); 
                 card.className = 'admin-card';
+                const avatar = u.avatar ? pb.files.getUrl(u, u.avatar) : 'https://via.placeholder.com/40';
                 
                 let btns = '';
                 if (State.profile.role === 'super') {
-                    if (u.role !== 'admin') btns += `<button class="act-btn" onclick="Admin.role('${uid}','admin')">OP</button>`;
-                    else btns += `<button class="act-btn danger" onclick="Admin.role('${uid}','user')">DEOP</button>`;
+                    if (u.role !== 'admin') btns += `<button class="act-btn" onclick="Admin.role('${u.id}','admin')">OP</button>`;
+                    else btns += `<button class="act-btn danger" onclick="Admin.role('${u.id}','user')">DEOP</button>`;
                     
-                    // Кнопка изменения ID
-                    btns += `<button class="act-btn" onclick="Admin.changeId('${uid}')">ID</button>`;
-                    
-                    btns += `<button class="act-btn danger" onclick="Admin.rm('${uid}')">DEL</button>`;
+                    btns += `<button class="act-btn danger" onclick="Admin.rm('${u.id}')">DEL</button>`;
                 }
                 
-                // Кнопка бана доступна всем админам
-                btns += `<button class="act-btn danger" onclick="Admin.mod('${uid}','isBanned',${!u.isBanned})">${u.isBanned?'UNBAN':'BAN'}</button>`;
-
+                // В PB нет стандартного isBanned, но можно использовать поле status или добавить bool поле isBanned
+                // Пока используем удаление или смену статуса
+                
                 card.innerHTML = `
                     <div class="admin-header">
-                        <img src="${u.avatar}" class="admin-avi">
+                        <img src="${avatar}" class="admin-avi">
                         <div class="admin-info">
-                            <h4>${u.displayName}</h4>
+                            <h4>${u.nickname || u.name}</h4>
                             <span>${u.shortId}</span>
                         </div>
                     </div>
@@ -51,16 +47,19 @@ window.Admin = {
                 `;
                 list.appendChild(card);
             });
-        });
+        } catch(e) { console.error(e); }
     },
-    mod: (u,k,v) => db.ref('users/'+u).update({[k]:v}),
-    role: (u,r) => db.ref('users/'+u).update({role:r}),
-    rm: (u) => UI.confirm("DELETE", "Irreversible action.", () => db.ref('users/'+u).remove()),
-    nuke: (p) => UI.confirm("NUKE", "DELETE ALL?", () => db.ref(p).remove()),
-    changeId: (u) => {
-        const newId = prompt("Введите новый ID пользователя:");
-        if (newId && newId.trim() !== "") {
-            db.ref('users/'+u).update({shortId: newId.trim()});
-        }
+
+    role: async (uid, r) => {
+        await pb.collection('users').update(uid, { role: r });
+        UI.toast("Role updated", "success");
+        Admin.load();
+    },
+
+    rm: (uid) => {
+        UI.confirm("DELETE", "Delete user?", async () => {
+            await pb.collection('users').delete(uid);
+            Admin.load();
+        });
     }
 };

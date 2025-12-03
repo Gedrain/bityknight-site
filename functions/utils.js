@@ -22,7 +22,7 @@ function resizeImage(file, callback) {
     reader.readAsDataURL(file);
 }
 
-// --- NOTIFICATIONS SYSTEM ---
+// --- СИСТЕМА УВЕДОМЛЕНИЙ ---
 window.Notifications = {
     init: () => {
         if ("Notification" in window && Notification.permission !== "granted") {
@@ -33,22 +33,51 @@ window.Notifications = {
         if (Notification.permission === "granted" && document.hidden) {
             new Notification(title, {
                 body: body,
-                icon: icon || 'https://cdn-icons-png.flaticon.com/512/733/733585.png'
+                icon: icon || 'icon.png'
             });
         }
     }
 };
 
+// --- СИСТЕМА БЛОКИРОВКИ (PocketBase) ---
 window.Block = {
-    toggle: () => {
+    toggle: async () => {
         if(!State.dmTarget) return;
-        const ref = db.ref('users/'+State.user.uid+'/blocked/'+State.dmTarget);
-        ref.once('value', s => {
-            if(s.exists()){ ref.remove(); UI.toast("Unblocked"); document.getElementById('btn-block').innerText="BLOCK"; }
-            else { ref.set(true); UI.toast("Blocked"); document.getElementById('btn-block').innerText="UNBLOCK"; }
-        });
+        const btn = document.getElementById('btn-block');
+        
+        try {
+            // Ищем, есть ли уже запись о блокировке
+            const records = await pb.collection('blocked').getList(1, 1, {
+                filter: `user = "${State.user.uid}" && target = "${State.dmTarget}"`
+            });
+
+            if(records.items.length > 0) {
+                // Если нашли -> разблокируем (удаляем запись)
+                await pb.collection('blocked').delete(records.items[0].id);
+                UI.toast("Unblocked");
+                if(btn) btn.innerText = "BLOCK";
+            } else {
+                // Если не нашли -> блокируем (создаем запись)
+                await pb.collection('blocked').create({
+                    user: State.user.uid,
+                    target: State.dmTarget
+                });
+                UI.toast("Blocked");
+                if(btn) btn.innerText = "UNBLOCK";
+            }
+        } catch(err) {
+            console.error("Block error:", err);
+            // Если ошибка 404, значит коллекции blocked нет или нет прав
+            UI.toast("Error (Check 'blocked' collection)", "error");
+        }
     },
-    check: (targetUid) => {
-        return db.ref('users/'+targetUid+'/blocked/'+State.user.uid).once('value').then(s => s.exists());
+    
+    check: async (targetUid) => {
+        try {
+            const records = await pb.collection('blocked').getList(1, 1, {
+                filter: `user = "${State.user.uid}" && target = "${targetUid}"`
+            });
+            return records.items.length > 0;
+        } catch(e) { return false; }
     }
 };
