@@ -64,13 +64,10 @@ const Chat = {
     
     loadDMs: () => {
         const l = document.getElementById('dm-list'); l.innerHTML = '';
-        let totalUnread = 0;
-        const totalBadge = document.getElementById('total-dm-badge');
-
+        
         db.ref('dms').on('value', s => {
             l.innerHTML = '';
-            totalUnread = 0;
-
+            
             s.forEach(c => {
                 if(c.key.includes(State.user.uid)) {
                     const otherId = c.key.split('_').find(k => k !== State.user.uid);
@@ -80,7 +77,6 @@ const Chat = {
                         Object.values(messages).forEach(m => {
                             if (m.uid !== State.user.uid && !m.read) localUnread++;
                         });
-                        totalUnread += localUnread;
 
                         db.ref('users/'+otherId).once('value', us => {
                             const u = us.val();
@@ -111,13 +107,6 @@ const Chat = {
                     }
                 }
             });
-            
-            if(totalUnread > 0) {
-                totalBadge.innerText = totalUnread;
-                totalBadge.classList.add('visible');
-            } else {
-                totalBadge.classList.remove('visible');
-            }
         });
     },
 
