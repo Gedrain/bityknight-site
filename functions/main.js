@@ -1,16 +1,23 @@
 window.Route = (t) => {
+    // 1. Сбрасываем активные классы навигации
     document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+    
+    // 2. Сбрасываем активные вкладки
     document.querySelectorAll('.tab-pane').forEach(e => e.classList.remove('active'));
     
+    // 3. Активируем нужную кнопку
     const btn = document.querySelector(`.nav-item[onclick="Route('${t}')"]`);
     if(btn) btn.classList.add('active');
     
+    // 4. Активируем нужную вкладку
     const tab = document.getElementById('tab-'+t);
     if(tab) tab.classList.add('active');
     
+    // 5. Закрываем меню (на мобильных)
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebar-overlay').classList.remove('open');
 
+    // 6. Если переходим в ЛС, обновляем список
     if(t === 'dms') Chat.loadDMs();
 };
 
@@ -69,21 +76,14 @@ const Background = {
 
 const Notifications = {
     init: () => {
-        if ("Notification" in window) {
-            // Запрашиваем права, если еще не даны и не запрещены
-            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                Notification.requestPermission().then(p => {
-                    if (p === "granted") {
-                        UI.notify("System", "Notifications Enabled", "success");
-                    }
-                });
-            }
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
         }
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     Background.init();
-    Notifications.init(); // <-- Запуск системы уведомлений
+    Notifications.init();
     if(Auth && Auth.init) Auth.init();
 });

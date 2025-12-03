@@ -1,41 +1,40 @@
 window.Settings = {
-    // Храним только обрезанные данные, так как редактор обязателен
     croppedData: { avi: null, ban: null },
 
-    defaultTheme: {
-        accent: '#d600ff',
-        bg: '#05000a',
-        panel: '#0e0e12'
-    },
+    defaultTheme: { accent: '#d600ff', bg: '#05000a', panel: '#0e0e12' },
     
     initListeners: () => {
-        // --- AVATAR ---
-        const aviIn = document.getElementById('avi-in');
-        if(aviIn) aviIn.onchange = e => {
-            const f = e.target.files[0];
-            if(f) {
-                // Авто-открытие кроппера
-                UI.Crop.start(f, 1, (base64) => {
-                    Settings.croppedData.avi = base64;
-                    document.getElementById('my-avi').src = base64;
-                }, () => {
-                    aviIn.value = ''; // Отмена - очищаем
+        const handleUpload = (file, ratio, callback) => {
+            if (!file) return;
+            if (file.type.toLowerCase().includes('gif')) {
+                const reader = new FileReader();
+                reader.onload = (e) => callback(e.target.result);
+                reader.readAsDataURL(file);
+            } else {
+                UI.Crop.start(file, ratio, (base64) => callback(base64), () => { 
+                    if(document.activeElement) document.activeElement.value = ''; 
                 });
             }
         };
 
-        // --- BANNER ---
+        const aviIn = document.getElementById('avi-in');
+        if(aviIn) aviIn.onchange = e => {
+            handleUpload(e.target.files[0], 1, (base64) => {
+                Settings.croppedData.avi = base64;
+                const el = document.getElementById('my-avi');
+                if(el) el.src = base64;
+                aviIn.value = '';
+            });
+        };
+
         const banIn = document.getElementById('banner-in');
         if(banIn) banIn.onchange = e => {
-            const f = e.target.files[0];
-            if(f) {
-                UI.Crop.start(f, 2.5, (base64) => {
-                    Settings.croppedData.ban = base64;
-                    document.getElementById('my-banner-prev').style.backgroundImage = `url(${base64})`;
-                }, () => {
-                    banIn.value = '';
-                });
-            }
+            handleUpload(e.target.files[0], 2.5, (base64) => {
+                Settings.croppedData.ban = base64;
+                const el = document.getElementById('my-banner-prev');
+                if(el) el.style.backgroundImage = `url(${base64})`;
+                banIn.value = '';
+            });
         };
     },
 
@@ -48,10 +47,7 @@ window.Settings = {
         if(!n) return UI.toast("Name required", "error");
         
         const update = { 
-            displayName: n, 
-            bio: bio,
-            prefix: prefix,
-            prefixColor: prefixColor,
+            displayName: n, bio: bio, prefix: prefix, prefixColor: prefixColor,
             theme: {
                 accent: document.getElementById('set-accent').value,
                 bg: document.getElementById('set-bg').value,
@@ -59,17 +55,12 @@ window.Settings = {
             }
         };
 
-        // Сохраняем обрезанные картинки
         if(Settings.croppedData.avi) update.avatar = Settings.croppedData.avi;
         if(Settings.croppedData.ban) update.banner = Settings.croppedData.ban;
 
         db.ref('users/'+State.user.uid).update(update).then(()=>{
             UI.toast("Settings Saved","success");
-            
-            // Сброс
             Settings.croppedData = { avi: null, ban: null };
-            document.getElementById('avi-in').value = '';
-            document.getElementById('banner-in').value = '';
         });
     },
 
@@ -84,15 +75,20 @@ window.Settings = {
 
     resetTheme: () => {
         const t = Settings.defaultTheme;
-        document.getElementById('set-accent').value = t.accent;
-        document.getElementById('set-bg').value = t.bg;
-        document.getElementById('set-panel').value = t.panel;
+        const elAcc = document.getElementById('set-accent');
+        const elBg = document.getElementById('set-bg');
+        const elPan = document.getElementById('set-panel');
+        if(elAcc) elAcc.value = t.accent;
+        if(elBg) elBg.value = t.bg;
+        if(elPan) elPan.value = t.panel;
         Settings.applyTheme(t);
     },
 
     applyTheme: (t) => {
         if(!t) t = Settings.defaultTheme;
         const styleEl = document.getElementById('theme-style');
+        if(!styleEl) return;
+
         const hexToRgba = (hex, alpha) => {
             const r = parseInt(hex.slice(1, 3), 16),
                   g = parseInt(hex.slice(3, 5), 16),
@@ -119,38 +115,98 @@ window.Settings = {
             input[type="text"], input[type="password"], input[type="email"], textarea { background: ${t.panel}; color: #fff; border: 1px solid #333; }
             input:focus, textarea:focus { border-color: ${t.accent}; }
         `;
-
-        if(window.Background && window.Background.updateColor) {
-            window.Background.updateColor(t.bg, t.accent);
-        }
+        if(window.Background && window.Background.updateColor) { window.Background.updateColor(t.bg, t.accent); }
     },
 
     view: (uid) => {
         if(!uid) return;
+        console.log("Opening profile for:", uid);
+
         db.ref('users/'+uid).once('value', s => {
             const u = s.val();
-            if(!u) return;
-            document.getElementById('u-banner').style.backgroundImage = u.banner ? `url(${u.banner})` : 'none';
-            document.getElementById('u-avi').src = u.avatar || 'https://via.placeholder.com/100';
-            document.getElementById('u-name').innerText = u.displayName;
-            document.getElementById('u-id').innerText = "#" + u.shortId;
+            if(!u) return console.error("User not found");
+            
+            // Вспомогательная функция для безопасной вставки
+            const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+            const setSrc = (id, val) => { const el = document.getElementById(id); if(el) el.src = val; };
+            const setBg = (id, val) => { const el = document.getElementById(id); if(el) el.style.backgroundImage = val; };
+
+            // 1. Основные данные
+            setBg('u-banner', u.banner ? `url(${u.banner})` : 'none');
+            setSrc('u-avi', u.avatar || 'https://via.placeholder.com/100');
+            setVal('u-name', u.displayName);
+            setVal('u-id', u.shortId);
+            
+            // 2. Префикс
             const prefContainer = document.getElementById('u-prefix-container');
-            if (u.prefix) prefContainer.innerHTML = `<span style="color:${u.prefixColor || '#fff'}; text-shadow:0 0 10px ${u.prefixColor};">[ ${u.prefix} ]</span>`;
-            else prefContainer.innerHTML = '';
-            const badge = document.getElementById('u-status');
-            badge.className = u.status === 'online' ? 'p-status online' : 'p-status offline';
-            const badgesEl = document.getElementById('u-badges');
-            badgesEl.innerHTML = '';
-            if(u.role === 'admin' || u.role === 'super') badgesEl.innerHTML += `<div class="p-badge-icon" style="color:#ff0055; border-color:#ff0055"><i class="fas fa-shield-alt"></i></div>`;
-            if(u.role === 'super') badgesEl.innerHTML += `<div class="p-badge-icon" style="color:#d600ff; border-color:#d600ff"><i class="fas fa-crown"></i></div>`;
-            badgesEl.innerHTML += `<div class="p-badge-icon" style="color:#00e5ff"><i class="fas fa-user"></i></div>`;
-            let rName = 'OPERATIVE';
-            if(u.role === 'super') rName = 'SYSTEM ARCHITECT';
+            if(prefContainer) {
+                if (u.prefix) {
+                    prefContainer.innerHTML = `<span style="font-size:0.8rem; font-weight:700; color:${u.prefixColor || '#fff'}; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${u.prefix}</span>`;
+                } else { prefContainer.innerHTML = ''; }
+            }
+            
+            // 3. Статус Онлайн (с проверкой на старый и новый ID)
+            const dot = document.getElementById('u-status-indicator') || document.getElementById('u-status');
+            if(dot) {
+                const activeClass = dot.id === 'u-status-indicator' ? 'p-status-dot' : 'p-status';
+                dot.className = u.status === 'online' ? `${activeClass} online` : `${activeClass}`;
+            }
+            
+            // 4. Роль
+            let rName = 'USER';
             if(u.role === 'admin') rName = 'ADMINISTRATOR';
-            document.getElementById('u-role').innerText = rName;
+            if(u.role === 'super') rName = 'ROOT ACCESS';
+            setVal('u-role', rName);
+            
+            // 5. Дата регистрации (безопасно)
+            const regEl = document.getElementById('u-reg-date');
+            if(regEl) {
+                if(u.createdAt) {
+                    const d = new Date(u.createdAt);
+                    regEl.innerText = d.toLocaleDateString();
+                } else {
+                    regEl.innerText = "N/A";
+                }
+            }
+            
+            // 6. Последний онлайн
+            const lsEl = document.getElementById('u-last-seen');
+            if(lsEl) {
+                if(u.status === 'online') {
+                    lsEl.innerText = "Online Now";
+                    lsEl.style.color = "#00ff9d";
+                } else {
+                    const ls = u.lastSeen ? new Date(u.lastSeen).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Unknown';
+                    lsEl.innerText = ls;
+                    lsEl.style.color = "#ccc";
+                }
+            }
+
+            // 7. Ачивки
+            const badgesEl = document.getElementById('u-badges');
+            if(badgesEl) {
+                badgesEl.innerHTML = '';
+                const addBadge = (icon, color, title) => {
+                    badgesEl.innerHTML += `<div class="p-badge-box" title="${title}" style="color:${color}; border-color:${color}40"><i class="${icon}"></i></div>`;
+                };
+
+                addBadge('fas fa-id-card', '#00e5ff', 'Resident');
+                if(u.role === 'admin' || u.role === 'super') addBadge('fas fa-shield-alt', '#ff0055', 'Staff');
+                if(u.role === 'super') addBadge('fas fa-code', '#d600ff', 'Developer');
+            }
+
             State.dmTarget = uid; 
-            Block.check(uid).then(b => document.getElementById('btn-block').innerText = b ? "UNBLOCK" : "BLOCK");
-            document.getElementById('modal-user').classList.add('open');
+            
+            // Блокировка (если модуль Block загружен)
+            if(window.Block && window.Block.check) {
+                Block.check(uid).then(b => {
+                    const btn = document.getElementById('btn-block');
+                    if(btn) btn.innerText = b ? "UNBLOCK" : "BLOCK";
+                });
+            }
+            
+            const modal = document.getElementById('modal-user');
+            if(modal) modal.classList.add('open');
         });
     }
 };

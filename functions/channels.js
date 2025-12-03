@@ -1,87 +1,49 @@
 window.Channels = {
     editingId: null,
-    
-    // Храним данные (Base64) для отправки
-    croppedData: {
-        newAvi: null,
-        newBan: null,
-        editAvi: null,
-        editBan: null
-    },
+    listListener: null,
+    croppedData: { newAvi: null, newBan: null, editAvi: null, editBan: null },
 
     initListeners: () => {
-        console.log('Channels: GIF Support + No-Crop Listeners initialized');
-
-        // Вспомогательная функция для обработки файлов
-        // Если GIF - оставляет как есть (анимация). Если другое - сжимает.
-        const processFile = (file, callback) => {
+        const handleUpload = (file, ratio, callback) => {
             if (!file) return;
-            
             if (file.type.match('image/gif')) {
-                // GIF: читаем напрямую, чтобы не убить анимацию
                 const reader = new FileReader();
                 reader.onload = (e) => callback(e.target.result);
                 reader.readAsDataURL(file);
             } else {
-                // Остальное: сжимаем
-                resizeImage(file, callback);
+                UI.Crop.start(file, ratio, (base64) => callback(base64), () => { if(document.activeElement) document.activeElement.value = ''; });
             }
         };
 
-        // ==========================================
-        // 1. СОЗДАНИЕ: НОВАЯ АВАТАРКА
-        // ==========================================
         const newAviIn = document.getElementById('new-ch-avi');
-        if(newAviIn) newAviIn.onchange = e => {
-            processFile(e.target.files[0], (base64) => {
-                Channels.croppedData.newAvi = base64;
-                const prev = document.getElementById('new-ch-avi-prev');
-                if(prev) prev.src = base64;
-                newAviIn.value = ''; 
-            });
-        };
+        if(newAviIn) newAviIn.onchange = e => handleUpload(e.target.files[0], 1, base64 => {
+            Channels.croppedData.newAvi = base64;
+            document.getElementById('new-ch-avi-prev').src = base64;
+            newAviIn.value = '';
+        });
 
-        // ==========================================
-        // 2. СОЗДАНИЕ: НОВЫЙ БАННЕР
-        // ==========================================
         const newBanIn = document.getElementById('new-ch-banner');
-        if(newBanIn) newBanIn.onchange = e => {
-            processFile(e.target.files[0], (base64) => {
-                Channels.croppedData.newBan = base64;
-                const prev = document.getElementById('new-ch-banner-prev');
-                if(prev) prev.style.backgroundImage = `url(${base64})`;
-                newBanIn.value = '';
-            });
-        };
+        if(newBanIn) newBanIn.onchange = e => handleUpload(e.target.files[0], 2.5, base64 => {
+            Channels.croppedData.newBan = base64;
+            document.getElementById('new-ch-banner-prev').style.backgroundImage = `url(${base64})`;
+            newBanIn.value = '';
+        });
 
-        // ==========================================
-        // 3. РЕДАКТИРОВАНИЕ: АВАТАРКА
-        // ==========================================
         const editAviIn = document.getElementById('edit-ch-avi');
-        if(editAviIn) editAviIn.onchange = e => {
-            processFile(e.target.files[0], (base64) => {
-                Channels.croppedData.editAvi = base64;
-                const prev = document.getElementById('edit-ch-avi-prev');
-                if(prev) prev.src = base64;
-                editAviIn.value = '';
-            });
-        };
+        if(editAviIn) editAviIn.onchange = e => handleUpload(e.target.files[0], 1, base64 => {
+            Channels.croppedData.editAvi = base64;
+            document.getElementById('edit-ch-avi-prev').src = base64;
+            editAviIn.value = '';
+        });
 
-        // ==========================================
-        // 4. РЕДАКТИРОВАНИЕ: БАННЕР
-        // ==========================================
         const editBanIn = document.getElementById('edit-ch-banner');
-        if(editBanIn) editBanIn.onchange = e => {
-            processFile(e.target.files[0], (base64) => {
-                Channels.croppedData.editBan = base64;
-                const prev = document.getElementById('edit-ch-banner-prev');
-                if(prev) prev.style.backgroundImage = `url(${base64})`;
-                editBanIn.value = '';
-            });
-        };
+        if(editBanIn) editBanIn.onchange = e => handleUpload(e.target.files[0], 2.5, base64 => {
+            Channels.croppedData.editBan = base64;
+            document.getElementById('edit-ch-banner-prev').style.backgroundImage = `url(${base64})`;
+            editBanIn.value = '';
+        });
     },
 
-    // Логика создания канала
     create: () => {
         const n = document.getElementById('new-ch-name').value;
         const isPriv = document.getElementById('new-ch-priv').checked;
@@ -90,91 +52,218 @@ window.Channels = {
         if(!n) return UI.toast("Name required", "error");
 
         const data = { 
-            name: n, 
-            pass: pass, 
-            creator: State.user.uid,
-            // Данные берутся из памяти
+            name: n, pass: pass, creator: State.user.uid,
             image: Channels.croppedData.newAvi || null,
-            banner: Channels.croppedData.newBan || null
+            banner: Channels.croppedData.newBan || null,
+            membersCount: 1
         };
 
-        db.ref('channels').push(data);
+        const newRef = db.ref('channels').push();
+        newRef.set(data).then(() => Channels.join(newRef.key, true));
+
         document.getElementById('modal-create').classList.remove('open');
-        
-        // Очистка формы
         document.getElementById('new-ch-name').value = '';
-        document.getElementById('new-ch-avi').value = '';
-        document.getElementById('new-ch-banner').value = '';
-        
-        // Сброс превью
-        const pAvi = document.getElementById('new-ch-avi-prev');
-        if(pAvi) pAvi.src = 'https://via.placeholder.com/100/000000/ffffff?text=+';
-        
-        const pBan = document.getElementById('new-ch-banner-prev');
-        if(pBan) pBan.style.backgroundImage = 'none';
-        
-        // Сброс данных
         Channels.croppedData.newAvi = null; 
         Channels.croppedData.newBan = null;
     },
 
-    // Загрузка списка каналов
-    load: () => {
-        db.ref('channels').on('value', s => {
-            const l = document.getElementById('channel-list'); 
-            if(!l) return;
-            l.innerHTML='';
+    join: (chid, isCreator = false) => {
+        const uid = State.user.uid;
+        const updates = {};
+        updates[`users_channels/${uid}/${chid}`] = true;
+        updates[`channels_members/${chid}/${uid}`] = true;
+
+        db.ref().update(updates).then(() => {
+            if(!isCreator) {
+                db.ref(`channels/${chid}/membersCount`).transaction(c => (c || 0) + 1);
+                UI.toast("Joined Channel", "success");
+            }
+            Channels.openChat(chid);
+        });
+    },
+
+    leave: (chid) => {
+        UI.confirm("LEAVE CHANNEL", "Are you sure you want to leave this channel?", () => {
+            const uid = State.user.uid;
+            const updates = {};
+            updates[`users_channels/${uid}/${chid}`] = null;
+            updates[`channels_members/${chid}/${uid}`] = null;
+
+            db.ref().update(updates).then(() => {
+                db.ref(`channels/${chid}/membersCount`).transaction(c => (c || 1) - 1);
+                UI.toast("Left Channel", "success");
+                Channels.load();
+                
+                // Закрываем модалки и чат
+                document.getElementById('modal-channel-settings').classList.remove('open');
+                if(State.chatMode === 'channel') Route('channels');
+            });
+        });
+    },
+    
+    // Функция для кнопки в редакторе
+    leaveFromSettings: () => {
+        if(Channels.editingId) {
+            Channels.leave(Channels.editingId);
+        }
+    },
+
+    openChat: (key) => {
+        db.ref('channels/'+key).once('value', s => {
+            const v = s.val();
+            if(!v) return;
             
-            s.forEach(c => {
-                const v = c.val();
+            document.getElementById('chat-title').innerText = '# ' + v.name;
+            State.chatMode = 'channel';
+            State.currentChannelId = key;
+
+            const headerBtn = document.getElementById('chat-top-right');
+            if(headerBtn) {
+                headerBtn.innerHTML = `<i class="fas fa-users" style="cursor:pointer; color:var(--primary); font-size:1.2rem; transition:0.2s;" onclick="Channels.viewMembers('${key}')"></i>`;
+            }
+
+            Route('chat');
+            Chat.listen(db.ref('channels_msg/'+key), 'chat-feed');
+        });
+    },
+
+    viewMembers: (chid) => {
+        if(!chid) return;
+        const list = document.getElementById('members-list');
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Loading...</div>';
+        document.getElementById('modal-members').classList.add('open');
+
+        db.ref('channels_members/'+chid).once('value', async snap => {
+            list.innerHTML = '';
+            if(!snap.exists()) {
+                list.innerHTML = '<div style="text-align:center; color:#555;">No members found</div>';
+                return;
+            }
+
+            const uids = Object.keys(snap.val());
+            const promises = uids.map(uid => db.ref('users/'+uid).once('value'));
+            const usersSnaps = await Promise.all(promises);
+
+            const users = usersSnaps.map(s => ({...s.val(), uid: s.key})).filter(u => u.displayName);
+            users.sort((a, b) => (b.status === 'online') - (a.status === 'online'));
+
+            users.forEach(u => {
+                const isOnline = u.status === 'online';
+                let lastSeenText = 'Offline';
+                if(isOnline) lastSeenText = '<span style="color:#00ff9d; font-weight:bold;">Online</span>';
+                else if(u.lastSeen) {
+                    const diff = Date.now() - u.lastSeen;
+                    const min = Math.floor(diff/60000);
+                    const hr = Math.floor(min/60);
+                    const days = Math.floor(hr/24);
+                    if(min < 1) lastSeenText = 'Just now';
+                    else if(min < 60) lastSeenText = `${min}m ago`;
+                    else if(hr < 24) lastSeenText = `${hr}h ago`;
+                    else lastSeenText = `${days}d ago`;
+                }
+
+                let roleColor = '#666'; 
+                let roleBorder = '1px solid rgba(255,255,255,0.1)';
+                if(u.role === 'admin') { roleColor = '#ff0055'; roleBorder = '1px solid rgba(255,0,85,0.4)'; }
+                if(u.role === 'super') { roleColor = '#d600ff'; roleBorder = '1px solid rgba(214,0,255,0.4)'; }
+                
+                const roleName = u.role === 'user' ? 'USER' : u.role.toUpperCase();
+
+                const card = document.createElement('div');
+                card.className = 'member-card';
+                card.innerHTML = `
+                    <div class="member-avi-wrap">
+                        <img src="${u.avatar || 'https://via.placeholder.com/50'}" class="member-avi">
+                        <div class="member-status ${isOnline ? 'online' : ''}"></div>
+                    </div>
+                    <div class="member-info">
+                        <div class="member-name">${u.displayName}</div>
+                        <div class="member-seen">${lastSeenText}</div>
+                    </div>
+                    <div class="member-role" style="color:${roleColor}; border:${roleBorder};">${roleName}</div>
+                `;
+                card.onclick = () => window.Profile.view(u.uid);
+                list.appendChild(card);
+            });
+        });
+    },
+
+    load: () => {
+        const uid = State.user.uid;
+        const l = document.getElementById('channel-list'); 
+        if(!l) return;
+        
+        if(Channels.listListener) db.ref('users_channels/' + uid).off('value', Channels.listListener);
+
+        Channels.listListener = db.ref('users_channels/' + uid).on('value', async snap => {
+            l.innerHTML = '';
+            
+            if(!snap.exists()) {
+                l.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">No channels yet.<br>Use Search to find by ID.</div>';
+                return;
+            }
+
+            const myChannels = Object.keys(snap.val());
+            const promises = myChannels.map(key => db.ref('channels/' + key).once('value'));
+            const snapshots = await Promise.all(promises);
+
+            snapshots.forEach(s => {
+                const v = s.val();
+                if(!v) return;
+                const key = s.key;
+
                 const d = document.createElement('div');
                 d.className = 'channel-card';
-                if(v.banner) d.style.backgroundImage = `url(${v.banner})`;
-                const img = v.image || 'https://via.placeholder.com/50/000/fff?text=%23';
-                const lock = v.pass ? '<i class="fas fa-lock" style="color:#ffcc00; margin-right:5px; font-size:0.8rem;"></i>' : '';
+
+                const img = v.image || 'https://via.placeholder.com/60/000/fff?text=%23';
+                const bannerStyle = v.banner ? `background-image: url('${v.banner}');` : '';
+                const lock = v.pass ? '<i class="fas fa-lock" style="color:#ffcc00; margin-right:5px;"></i>' : '';
+                const shortId = key.substr(-4);
+                const members = v.membersCount || 1;
                 
                 let settings = '';
                 if(v.creator === State.user.uid || State.profile.role === 'super') {
-                    settings = `<i class="fas fa-cog ch-settings" onclick="event.stopPropagation(); Channels.openSettings('${c.key}')"></i>`;
+                    settings = `<i class="fas fa-cog ch-settings" onclick="event.stopPropagation(); Channels.openSettings('${key}')"></i>`;
+                } else {
+                    settings = `<i class="fas fa-sign-out-alt ch-settings" style="color:#ff0055" onclick="event.stopPropagation(); Channels.leave('${key}')"></i>`;
                 }
                 
-                const badgeId = `ch-badge-${c.key}`;
+                const badgeId = `ch-badge-${key}`;
                 
                 d.innerHTML = `
-                    <div class="ch-content">
-                        <img src="${img}" class="ch-avi">
-                        <div class="ch-info">
+                    <div class="ch-card-banner" style="${bannerStyle}"></div>
+                    <div class="ch-card-body">
+                        <img src="${img}" class="ch-card-avi">
+                        <div class="ch-card-info">
                             <div class="ch-name">${lock}${v.name}</div>
-                            <div class="ch-meta">ID: ${c.key.substr(-4)}</div>
+                            <div class="ch-meta">
+                                <span>ID: ${shortId}</span> &bull; 
+                                <span style="color:#00ff9d"><i class="fas fa-users"></i> ${members}</span>
+                            </div>
                         </div>
-                        <span id="${badgeId}" class="badge-count">0</span>
-                        ${settings}
+                        <div class="ch-controls">
+                            <span id="${badgeId}" class="badge-count">0</span>
+                            ${settings}
+                        </div>
                     </div>
                 `;
                 
                 d.onclick = () => {
-                    const b = document.getElementById(badgeId);
-                    if(b) b.classList.remove('visible');
-                    
-                    if(v.pass && !State.unlockedChannels.has(c.key)) { 
-                        State.pendingCh={id:c.key, name:v.name, pass:v.pass}; 
+                    document.getElementById(badgeId).classList.remove('visible');
+                    if(v.pass && !State.unlockedChannels.has(key)) { 
+                        State.pendingCh={id:key, name:v.name, pass:v.pass}; 
                         document.getElementById('modal-pass').classList.add('open'); 
                     } else { 
-                        const t = document.getElementById('chat-title');
-                        if(t) t.innerText='# '+v.name; 
-                        Route('chat'); 
-                        Chat.listen(db.ref('channels_msg/'+c.key), 'chat-feed'); 
+                        Channels.openChat(key);
                     }
                 };
                 l.appendChild(d);
                 
-                // Бейджик сообщений
-                db.ref('channels_msg/'+c.key).limitToLast(1).on('child_added', snap => {
+                db.ref('channels_msg/'+key).limitToLast(1).on('child_added', snap => {
                     const msg = snap.val();
                     const isFresh = (Date.now() - msg.ts) < 5000; 
                     const isActive = document.getElementById('tab-chat').classList.contains('active') && 
                                      document.getElementById('chat-title').innerText === '# '+v.name;
-                    
                     if (isFresh && msg.uid !== State.user.uid && !isActive) {
                         const b = document.getElementById(badgeId);
                         if(b) {
@@ -192,8 +281,7 @@ window.Channels = {
             State.unlockedChannels.add(State.pendingCh.id);
             document.getElementById('modal-pass').classList.remove('open');
             inp.value = '';
-            Route('chat'); 
-            Chat.listen(db.ref('channels_msg/'+State.pendingCh.id), 'chat-feed');
+            Channels.openChat(State.pendingCh.id);
         } else UI.toast("Wrong Pass", "error");
     },
 
@@ -203,19 +291,12 @@ window.Channels = {
             const v = s.val();
             document.getElementById('edit-ch-name').value = v.name;
             
-            // Текущие данные
             const avi = v.image || 'https://via.placeholder.com/100/000000/ffffff?text=+';
             const ban = v.banner || 'none';
-            
-            const pAvi = document.getElementById('edit-ch-avi-prev');
-            if(pAvi) pAvi.src = avi;
-            
-            const pBan = document.getElementById('edit-ch-banner-prev');
-            if(pBan) pBan.style.backgroundImage = ban === 'none' ? 'none' : `url(${ban})`;
+            document.getElementById('edit-ch-avi-prev').src = avi;
+            document.getElementById('edit-ch-banner-prev').style.backgroundImage = ban === 'none' ? 'none' : `url(${ban})`;
 
             document.getElementById('modal-channel-settings').classList.add('open');
-            
-            // Сброс временных данных
             Channels.croppedData.editAvi = null; 
             Channels.croppedData.editBan = null;
         });
@@ -227,15 +308,11 @@ window.Channels = {
         if(!name) return UI.toast("Name required", "error");
         
         const update = { name: name };
-        
-        // Если пользователь выбрал новое фото, оно уже в croppedData
         if(Channels.croppedData.editAvi) update.image = Channels.croppedData.editAvi;
         if(Channels.croppedData.editBan) update.banner = Channels.croppedData.editBan;
 
         db.ref('channels/'+key).update(update);
         document.getElementById('modal-channel-settings').classList.remove('open');
-        
-        // Очистка
         document.getElementById('edit-ch-avi').value = '';
         document.getElementById('edit-ch-banner').value = '';
         Channels.croppedData.editAvi = null;

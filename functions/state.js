@@ -6,6 +6,9 @@ const State = {
     pendingCh: null, // Channel trying to enter
     isReg: false, // Login/Reg switch state
     
-    // Новое: хранит ID каналов, в которые мы уже ввели пароль в этой сессии
+    // Хранит режим чата ('channel' или 'dm'), чтобы кнопка назад знала куда идти
+    chatMode: 'channels', 
+
+    // Хранит ID каналов, в которые мы уже ввели пароль в этой сессии
     unlockedChannels: new Set()
 };

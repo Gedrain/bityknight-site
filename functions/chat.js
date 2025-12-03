@@ -1,6 +1,25 @@
 const Chat = {
-    toNews: () => { },
-    checkLen: (el) => {},
+    init: () => {
+        const inp = document.getElementById('msg-in');
+        if(inp) {
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); Chat.send(); }
+            });
+        }
+    },
+
+    back: () => {
+        // Очищаем кнопку участников, так как выходим из чата
+        const rightBtn = document.getElementById('chat-top-right');
+        if(rightBtn) rightBtn.innerHTML = '';
+
+        // Возвращаемся туда, откуда пришли
+        if (State.chatMode === 'dm') {
+            Route('dms');
+        } else {
+            Route('channels');
+        }
+    },
 
     send: (type) => {
         const id = 'msg-in';
@@ -17,10 +36,8 @@ const Chat = {
                 uid: State.user.uid, 
                 user: State.profile.displayName, 
                 avatar: State.profile.avatar,
-                // Добавляем префикс в сообщение
                 prefix: State.profile.prefix || null,
                 prefixColor: State.profile.prefixColor || null,
-                
                 role: State.profile.role, 
                 text: t||'', 
                 image: img||null,
@@ -68,21 +85,26 @@ const Chat = {
                         db.ref('users/'+otherId).once('value', us => {
                             const u = us.val();
                             if(!u) return;
+                            
                             const d = document.createElement('div'); 
-                            d.className = 'channel-card';
-                            if(u.banner) d.style.backgroundImage = `url(${u.banner})`;
-                            const badgeHtml = localUnread > 0 ? `<span class="badge-count visible">${localUnread}</span>` : '';
+                            d.className = 'channel-card'; 
+
+                            const bannerStyle = u.banner ? `background-image: url('${u.banner}')` : '';
+                            const badgeHtml = localUnread > 0 ? `<span class="badge-count visible" style="margin-left:auto;">${localUnread}</span>` : '';
+                            const avatar = u.avatar || 'https://via.placeholder.com/100';
 
                             d.innerHTML = `
-                                <div class="ch-content">
-                                    <img src="${u.avatar}" class="ch-avi">
-                                    <div class="ch-info">
+                                <div class="ch-card-banner" style="${bannerStyle}"></div>
+                                <div class="ch-card-body">
+                                    <img src="${avatar}" class="ch-card-avi">
+                                    <div class="ch-card-info">
                                         <div class="ch-name">${u.displayName}</div>
                                         <div class="ch-meta">Private Chat</div>
                                     </div>
                                     ${badgeHtml}
                                 </div>
                             `;
+                            
                             d.onclick = () => Chat.startDM(otherId, u.displayName);
                             l.appendChild(d);
                         });
@@ -102,6 +124,13 @@ const Chat = {
     startDM: (targetId, targetName) => {
         const tid = targetId || State.dmTarget;
         if(!tid) return console.error("No target for DM");
+
+        // ВАЖНО: Ставим режим ЛС
+        State.chatMode = 'dm';
+        
+        // Убираем кнопку участников (в ЛС она не нужна)
+        const rightBtn = document.getElementById('chat-top-right');
+        if(rightBtn) rightBtn.innerHTML = '';
 
         const ids = [State.user.uid, tid].sort();
         document.getElementById('modal-user').classList.remove('open');
@@ -141,10 +170,8 @@ const Chat = {
                 markRead(s);
             }
 
-            const isHidden = document.hidden || !document.getElementById('tab-chat').classList.contains('active');
-            if (!isMine && !initialLoad && isHidden) {
-                const textPreview = d.image ? 'sent an image' : d.text;
-                UI.notify(d.user, textPreview, 'msg', d.avatar);
+            if (!isMine && !initialLoad && (document.hidden || !document.getElementById('tab-chat').classList.contains('active'))) {
+                UI.notify(d.user, d.image ? 'sent an image' : d.text, 'msg', d.avatar);
             }
 
             const div = document.createElement('div');
@@ -155,14 +182,12 @@ const Chat = {
             if(isMine || State.profile.role==='super') del = `<i class="fas fa-trash" style="margin-left:5px; cursor:pointer; color:#666; font-size:0.8rem;" onclick="Chat.del('${key}')"></i>`;
 
             const aviId = `avi-${key}`;
-            
             let statusHtml = '';
             if (isMine) {
                 const checkClass = d.read ? 'read' : '';
                 statusHtml = `<div class="msg-meta"><span class="msg-checks ${checkClass}"><i class="fas fa-check-double"></i></span></div>`;
             }
 
-            // --- RENDER PREFIX ---
             let prefixHtml = '';
             if (d.prefix) {
                 prefixHtml = `<span style="color:${d.prefixColor || '#fff'}; margin-right:5px; font-weight:800; font-family:'Exo 2'; text-shadow:0 0 5px ${d.prefixColor};">[${d.prefix}]</span>`;
@@ -209,3 +234,5 @@ const Chat = {
     del: k => UI.confirm("DELETE", "Delete message?", () => State.chatRef.child(k).remove()),
     confirmEdit: () => {}
 };
+
+document.addEventListener('DOMContentLoaded', () => { Chat.init(); });
