@@ -1,0 +1,84 @@
+/* --- SETTINGS TAB UI --- */
+
+/* Navigation Tabs */
+.settings-nav {
+    display: flex; gap: 10px; margin-bottom: 25px;
+    background: rgba(0,0,0,0.2); padding: 5px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.settings-nav-btn {
+    flex: 1; padding: 12px; border: none; background: transparent;
+    color: #666; font-family: var(--font-head); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+    border-radius: 8px; transition: 0.3s;
+}
+
+.settings-nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+
+.settings-nav-btn.active {
+    background: var(--primary); color: #000;
+    box-shadow: 0 0 15px var(--primary-dim);
+}
+
+/* Sections */
+.settings-section { animation: fadeIn 0.3s ease-out; }
+.settings-section.hidden { display: none; }
+
+/* Theme Presets Grid */
+.theme-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px; margin-bottom: 25px;
+}
+
+.theme-preset-card {
+    background: #111; border: 1px solid #333; border-radius: 10px;
+    overflow: hidden; cursor: pointer; transition: 0.2s;
+    display: flex; flex-direction: column;
+}
+
+.theme-preset-card:hover { transform: translateY(-3px); border-color: var(--primary); }
+
+.preset-preview {
+    height: 60px; position: relative; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.preset-name {
+    padding: 8px; font-size: 0.7rem; text-align: center;
+    font-family: monospace; color: #888; text-transform: uppercase;
+}
+
+/* Detailed Color Pickers */
+.color-picker-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px; background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.color-picker-row span { font-size: 0.9rem; font-weight: 500; color: #ccc; }
+
+input[type="color"] {
+    -webkit-appearance: none; border: none; width: 40px; height: 40px;
+    border-radius: 50%; padding: 0; overflow: hidden; cursor: pointer;
+    background: none !important; box-shadow: none !important;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 2px solid #333; border-radius: 50%; }
+
+/* Setting Group Title */
+.set-group-title {
+    font-family: var(--font-head); font-size: 0.8rem; color: var(--primary);
+    margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;
+    margin-top: 10px;
+}
+
+/* Fix for profile preview in settings */
+.panel-box {
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.panel-border {
+    border-color: var(--bg) !important;
+}

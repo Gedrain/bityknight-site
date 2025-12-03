@@ -1,4 +1,3 @@
-
 /* Добавь это в САМУЮ ПЕРВУЮ строку файла css/style.css */
 @import url('https://fonts.googleapis.com/css2?family=Pirata+One&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
@@ -468,4 +467,128 @@ input:focus, textarea:focus {
 }
 
 @media (max-width: 768px) { .glitch-text { font-size: 2.5rem; } }
+
+/* --- NEW AUTH SYSTEM STYLES --- */
+
+.auth-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    display: flex; justify-content: center; align-items: center;
+    background: radial-gradient(circle at center, rgba(20,0,30,0.8) 0%, #000 100%);
+    backdrop-filter: blur(5px);
 }
+
+.auth-card {
+    width: 100%; max-width: 380px;
+    background: rgba(14, 14, 18, 0.7);
+    border: 1px solid rgba(214, 0, 255, 0.3);
+    border-radius: 20px;
+    padding: 30px;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(214, 0, 255, 0.05);
+    overflow: hidden;
+    /* Sci-fi corners */
+    clip-path: polygon(
+        0 0, 100% 0, 
+        100% calc(100% - 20px), calc(100% - 20px) 100%, 
+        0 100%
+    );
+}
+
+/* Header & Glitch Text */
+.auth-header { text-align: center; margin-bottom: 25px; }
+.auth-logo-glitch {
+    font-family: 'Exo 2', sans-serif; font-weight: 900; font-size: 2rem;
+    color: #fff; letter-spacing: 2px; position: relative;
+    text-shadow: 2px 2px var(--primary);
+}
+.auth-subtitle {
+    font-family: monospace; font-size: 0.7rem; color: var(--secondary);
+    letter-spacing: 4px; opacity: 0.8; margin-top: 5px;
+}
+
+/* Mode Switcher (Tabs) */
+.auth-switch-container {
+    display: flex; position: relative; background: rgba(0,0,0,0.5);
+    border-radius: 12px; padding: 4px; margin-bottom: 25px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.auth-switch-btn {
+    flex: 1; text-align: center; padding: 10px; font-size: 0.8rem;
+    font-weight: 700; color: #666; cursor: pointer; z-index: 2;
+    transition: 0.3s; font-family: var(--font-head);
+}
+.auth-switch-btn.active { color: #fff; text-shadow: 0 0 10px var(--primary); }
+.auth-switch-bg {
+    position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
+    background: var(--primary); border-radius: 8px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px var(--primary-dim); z-index: 1;
+}
+/* When 2nd tab is active, move background */
+.auth-switch-container.reg-mode .auth-switch-bg { transform: translateX(100%); background: var(--secondary); box-shadow: 0 0 15px rgba(0,229,255,0.4); }
+
+/* Inputs with Floating Labels */
+.input-group {
+    position: relative; margin-bottom: 20px;
+    transition: all 0.4s ease; max-height: 80px; opacity: 1; overflow: visible;
+}
+.input-group.collapsed {
+    max-height: 0; opacity: 0; margin-bottom: 0; overflow: hidden; transform: scaleY(0.9);
+}
+
+.input-group input {
+    width: 100%; background: transparent !important; border: none !important;
+    border-radius: 0; padding: 12px 10px 12px 35px; color: #fff !important;
+    font-family: monospace; font-size: 1rem; z-index: 2; position: relative;
+    box-shadow: none !important; margin: 0;
+}
+.input-group label {
+    position: absolute; left: 35px; top: 14px; color: #666; font-size: 0.85rem;
+    transition: 0.3s; pointer-events: none; font-family: var(--font-head); letter-spacing: 1px;
+}
+.input-icon {
+    position: absolute; left: 0; top: 14px; color: #444; font-size: 1rem; transition: 0.3s;
+}
+.input-line {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 1px;
+    background: #333; transition: 0.3s;
+}
+.input-reveal {
+    position: absolute; right: 0; top: 14px; color: #444; cursor: pointer; z-index: 5; transition: 0.3s;
+}
+.input-reveal:hover { color: #fff; }
+
+/* Focus State Animations */
+.input-group input:focus ~ .input-line,
+.input-group input:not(:placeholder-shown) ~ .input-line {
+    background: var(--primary); height: 2px;
+    box-shadow: 0 0 10px var(--primary);
+}
+.input-group input:focus ~ label,
+.input-group input:not(:placeholder-shown) ~ label {
+    top: -10px; left: 0; font-size: 0.7rem; color: var(--primary);
+}
+.input-group input:focus ~ .input-icon { color: #fff; text-shadow: 0 0 8px #fff; }
+
+/* Cyber Button */
+.btn-cyber {
+    position: relative; width: 100%; padding: 15px; margin-top: 10px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: #fff; font-family: var(--font-head); font-weight: 800; letter-spacing: 2px;
+    cursor: pointer; overflow: hidden; transition: 0.3s;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.btn-cyber:hover {
+    background: var(--primary); border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-dim); letter-spacing: 3px;
+}
+.btn-scanline {
+    position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transform: skewX(-20deg); transition: 0.5s;
+}
+.btn-cyber:hover .btn-scanline { left: 150%; transition: 0.7s ease-in-out; }
+
+/* Footer */
+.auth-footer { margin-top: 20px; text-align: center; font-size: 0.75rem; color: #666; font-family: monospace; }
+.link-hover { cursor: pointer; transition: 0.2s; border-bottom: 1px dotted #444; }
+.link-hover:hover { color: var(--secondary); border-color: var(--secondary); }

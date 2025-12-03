@@ -1,24 +1,23 @@
-// Конвертер Base64 в файл для отправки на сервер
-window.dataURLtoFile = (dataurl, filename) => {
-    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-    return new File([u8arr], filename, {type:mime});
-};
-
 window.Route = (t) => {
+    // 1. Сбрасываем активные классы навигации
     document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+    
+    // 2. Сбрасываем активные вкладки
     document.querySelectorAll('.tab-pane').forEach(e => e.classList.remove('active'));
     
+    // 3. Активируем нужную кнопку
     const btn = document.querySelector(`.nav-item[onclick="Route('${t}')"]`);
     if(btn) btn.classList.add('active');
     
+    // 4. Активируем нужную вкладку
     const tab = document.getElementById('tab-'+t);
     if(tab) tab.classList.add('active');
     
+    // 5. Закрываем меню (на мобильных)
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebar-overlay').classList.remove('open');
 
+    // 6. Если переходим в ЛС, обновляем список
     if(t === 'dms') Chat.loadDMs();
 };
 

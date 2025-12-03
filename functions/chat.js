@@ -7,250 +7,221 @@ const Chat = {
             });
         }
     },
-    
+
     back: () => {
-        document.getElementById('chat-top-right').innerHTML = '';
-        
-        // Decide where to go back based on current mode
+        // Очищаем кнопку участников, так как выходим из чата
+        const rightBtn = document.getElementById('chat-top-right');
+        if(rightBtn) rightBtn.innerHTML = '';
+
+        // Возвращаемся туда, откуда пришли
         if (State.chatMode === 'dm') {
-             Route('dms');
+            Route('dms');
         } else {
-             Route('channels');
+            Route('channels');
         }
-        
-        // Stop listening
-        if(State.activeSubscription) {
-            State.activeSubscription();
-            State.activeSubscription = null;
-        }
-        State.currentChannelId = null;
-        State.dmTarget = null;
     },
 
-    send: async () => {
-        const txtEl = document.getElementById('msg-in');
+    send: (type) => {
+        const id = 'msg-in';
+        const txtEl = document.getElementById(id);
+        if(!txtEl) return; 
+        
         const txt = txtEl.value.trim();
         const files = document.getElementById('file-in').files;
 
         if(!txt && files.length === 0) return;
-        
-        // Validate destination
-        if(!State.currentChannelId && !State.dmTarget) return UI.toast("No destination selected", "error");
 
-        const formData = new FormData();
-        formData.append('author', State.user.uid);
-        
-        if (State.chatMode === 'channel') {
-            formData.append('channel', State.currentChannelId);
-        } else if (State.chatMode === 'dm') {
-            formData.append('target', State.dmTarget);
-        }
-        
-        if(txt) formData.append('text', txt);
-        if(files.length > 0) formData.append('image', files[0]);
-
-        try {
-            await pb.collection('messages').create(formData);
-            txtEl.value = '';
-            document.getElementById('file-in').value = '';
-        } catch(e) {
-            console.error(e);
-            UI.toast("Error sending", "error");
-        }
-    },
-
-    // === LISTEN TO A PUBLIC CHANNEL ===
-    listenChannel: async (chid) => {
-        State.chatMode = 'channel';
-        State.currentChannelId = chid;
-        State.dmTarget = null;
-        
-        const feed = document.getElementById('chat-feed');
-        Chat.prepareFeed(feed);
-
-        try {
-            const resultList = await pb.collection('messages').getList(1, 50, {
-                filter: `channel = "${chid}"`,
-                sort: '-created',
-                expand: 'author'
+        const push = (img, t) => {
+            State.chatRef.push({
+                uid: State.user.uid, 
+                user: State.profile.displayName, 
+                avatar: State.profile.avatar,
+                prefix: State.profile.prefix || null,
+                prefixColor: State.profile.prefixColor || null,
+                role: State.profile.role, 
+                text: t||'', 
+                image: img||null,
+                ts: firebase.database.ServerValue.TIMESTAMP,
+                read: false
             });
-            
-            Chat.renderList(resultList.items, feed);
+        };
 
-            State.activeSubscription = await pb.collection('messages').subscribe('*', function(e) {
-                if (e.action === 'create' && e.record.channel === chid) {
-                    Chat.addOne(e.record, feed);
+        if(txt) { push(null, txt); txtEl.value=''; }
+        
+        if(files.length > 0) { 
+            Array.from(files).forEach(f => { 
+                if(f.type.match('image/gif')) {
+                    const reader = new FileReader();
+                    reader.onload = e => push(e.target.result, '');
+                    reader.readAsDataURL(f);
+                } else {
+                    resizeImage(f, url => push(url, '')); 
                 }
-                if (e.action === 'delete') Chat.removeOne(e.record.id);
-            });
-        } catch(err) { console.error(err); }
-    },
-
-    // === LISTEN TO PRIVATE MESSAGES (DM) ===
-    listenDM: async (targetUid) => {
-        State.chatMode = 'dm';
-        State.dmTarget = targetUid;
-        State.currentChannelId = null;
-
-        const feed = document.getElementById('chat-feed');
-        Chat.prepareFeed(feed);
-
-        // Get target user info for header
-        try {
-            const u = await pb.collection('users').getOne(targetUid);
-            document.getElementById('chat-title').innerText = '@' + (u.username || u.name);
-        } catch(e) { document.getElementById('chat-title').innerText = 'User'; }
-
-        try {
-            // Filter: Messages where (I am author AND they are target) OR (They are author AND I am target)
-            const myId = State.user.uid;
-            const filter = `(author = "${myId}" && target = "${targetUid}") || (author = "${targetUid}" && target = "${myId}")`;
-
-            const resultList = await pb.collection('messages').getList(1, 50, {
-                filter: filter,
-                sort: '-created',
-                expand: 'author'
-            });
-
-            Chat.renderList(resultList.items, feed);
-
-            State.activeSubscription = await pb.collection('messages').subscribe('*', function(e) {
-                const rec = e.record;
-                // Check if message belongs to this conversation
-                const isRelevant = (rec.author === myId && rec.target === targetUid) || 
-                                   (rec.author === targetUid && rec.target === myId);
-                
-                if (e.action === 'create' && isRelevant) {
-                    Chat.addOne(rec, feed);
-                }
-                if (e.action === 'delete') Chat.removeOne(rec.id);
-            });
-        } catch(err) { console.error(err); }
-    },
-
-    // --- Helpers ---
-    prepareFeed: (feed) => {
-        feed.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Loading...</div>';
-        if(State.activeSubscription) { State.activeSubscription(); State.activeSubscription = null; }
-    },
-
-    renderList: (items, feed) => {
-        feed.innerHTML = '';
-        items.reverse().forEach(msg => Chat.renderMessage(msg, feed));
-        feed.scrollTop = feed.scrollHeight;
-    },
-
-    addOne: async (rec, feed) => {
-        const fullMsg = await pb.collection('messages').getOne(rec.id, {expand: 'author'});
-        Chat.renderMessage(fullMsg, feed);
-        feed.scrollTop = feed.scrollHeight;
-    },
-
-    removeOne: (id) => {
-        const el = document.getElementById('msg-'+id);
-        if(el) el.remove();
-    },
-
-    renderMessage: (msg, container) => {
-        const isMine = msg.author === State.user.uid;
-        const author = msg.expand ? msg.expand.author : { username: 'Unknown', name: 'Unknown', avatar: '' };
-        
-        const avatarUrl = author.avatar ? pb.files.getUrl(author, author.avatar) : 'https://via.placeholder.com/40';
-        let imageUrl = msg.image ? pb.files.getUrl(msg, msg.image) : '';
-        const displayName = author.name || author.username || "User";
-
-        const div = document.createElement('div');
-        div.className = `msg ${isMine?'mine':''}`;
-        div.id = 'msg-'+msg.id;
-        
-        let del = '';
-        if(isMine || State.profile.role === 'super' || State.profile.role === 'admin') {
-            del = `<i class="fas fa-trash" style="margin-left:8px; cursor:pointer; opacity:0.5; font-size:0.7rem;" onclick="Chat.del('${msg.id}')"></i>`;
-        }
-
-        let prefixHtml = '';
-        if (author.prefix) {
-            prefixHtml = `<span style="color:${author.prefixColor || '#fff'}; margin-right:5px; font-weight:800; text-shadow:0 0 5px ${author.prefixColor};">[${author.prefix}]</span>`;
-        }
-
-        div.innerHTML = `
-            <img src="${avatarUrl}" class="avatar" onclick="window.Profile.view('${msg.author}')">
-            <div class="bubble">
-                <div style="font-size:0.75rem; font-weight:700; color:${isMine?'#fff':'#bc13fe'}; margin-bottom:3px; display:flex; align-items:center;">
-                    ${prefixHtml}${displayName} ${del}
-                </div>
-                ${msg.text ? `<div>${Chat.safe(msg.text)}</div>` : ''}
-                ${imageUrl ? `<img src="${imageUrl}" class="msg-img" onclick="UI.alert('Image','View logic here')">` : ''}
-            </div>
-        `;
-        container.appendChild(div);
-    },
-
-    safe: (str) => {
-        if(!str) return '';
-        const d = document.createElement('div');
-        d.innerText = str;
-        return d.innerHTML;
-    },
-
-    del: async (id) => {
-        if(confirm("Delete message?")) {
-            try { await pb.collection('messages').delete(id); } 
-            catch(e) { UI.toast("Cannot delete", "error"); }
+            }); 
+            document.getElementById('file-in').value = ''; 
         }
     },
     
-    // --- DM List Logic ---
-    loadDMs: async () => {
-        const list = document.getElementById('dm-list');
-        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Loading DMs...</div>';
+    loadDMs: () => {
+        const l = document.getElementById('dm-list'); l.innerHTML = '';
         
-        try {
-            // PocketBase doesn't have "distinct" query easily.
-            // We fetch all users except self to show a list of potential DMs (Simple approach)
-            // OR we fetch messages where I am involved and extract users.
+        db.ref('dms').on('value', s => {
+            l.innerHTML = '';
             
-            // Approach: List all users for now (simplest for this architecture)
-            // You can later optimize to "Recent Chats"
-            const users = await pb.collection('users').getList(1, 50, {
-                sort: '-lastSeen',
-                filter: `id != "${State.user.uid}"`
-            });
+            s.forEach(c => {
+                if(c.key.includes(State.user.uid)) {
+                    const otherId = c.key.split('_').find(k => k !== State.user.uid);
+                    if(otherId) {
+                        let localUnread = 0;
+                        const messages = c.val();
+                        Object.values(messages).forEach(m => {
+                            if (m.uid !== State.user.uid && !m.read) localUnread++;
+                        });
 
-            list.innerHTML = '';
-            users.items.forEach(u => {
-                 const isOnline = u.status === 'online';
-                 const avi = u.avatar ? pb.files.getUrl(u, u.avatar) : 'https://via.placeholder.com/50';
-                 
-                 const el = document.createElement('div');
-                 el.className = 'channel-card'; // Reuse channel card style
-                 el.innerHTML = `
-                    <div class="ch-card-body" style="margin-top:0; padding:15px;">
-                        <img src="${avi}" class="ch-card-avi">
-                        <div class="ch-card-info">
-                            <div class="ch-name">${u.name || u.username}</div>
-                            <div class="ch-meta" style="color:${isOnline?'#00ff9d':'#777'}">
-                                ${isOnline ? '● Online' : 'Offline'}
-                            </div>
-                        </div>
-                        <i class="fas fa-comment-dots" style="color:#d600ff"></i>
-                    </div>
-                 `;
-                 el.onclick = () => {
-                     Chat.startDM(u.id);
-                 };
-                 list.appendChild(el);
+                        db.ref('users/'+otherId).once('value', us => {
+                            const u = us.val();
+                            if(!u) return;
+                            
+                            const d = document.createElement('div'); 
+                            d.className = 'channel-card'; 
+
+                            const bannerStyle = u.banner ? `background-image: url('${u.banner}')` : '';
+                            const badgeHtml = localUnread > 0 ? `<span class="badge-count visible" style="margin-left:auto;">${localUnread}</span>` : '';
+                            const avatar = u.avatar || 'https://via.placeholder.com/100';
+
+                            d.innerHTML = `
+                                <div class="ch-card-banner" style="${bannerStyle}"></div>
+                                <div class="ch-card-body">
+                                    <img src="${avatar}" class="ch-card-avi">
+                                    <div class="ch-card-info">
+                                        <div class="ch-name">${u.displayName}</div>
+                                        <div class="ch-meta">Private Chat</div>
+                                    </div>
+                                    ${badgeHtml}
+                                </div>
+                            `;
+                            
+                            d.onclick = () => Chat.startDM(otherId, u.displayName);
+                            l.appendChild(d);
+                        });
+                    }
+                }
             });
-            
-        } catch(e) { list.innerHTML = "Error loading users"; }
+        });
     },
 
-    startDM: (uid) => {
-        // Close modals if open
-        document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('open'));
+    startDM: (targetId, targetName) => {
+        const tid = targetId || State.dmTarget;
+        if(!tid) return console.error("No target for DM");
+
+        // ВАЖНО: Ставим режим ЛС
+        State.chatMode = 'dm';
+        
+        // Убираем кнопку участников (в ЛС она не нужна)
+        const rightBtn = document.getElementById('chat-top-right');
+        if(rightBtn) rightBtn.innerHTML = '';
+
+        const ids = [State.user.uid, tid].sort();
+        document.getElementById('modal-user').classList.remove('open');
+        
+        if(!targetName) {
+            const nameEl = document.getElementById('u-name');
+            targetName = nameEl ? nameEl.innerText : 'Chat';
+        }
+
+        const titleEl = document.getElementById('chat-title');
+        if(titleEl) titleEl.innerText = targetName;
+        
         Route('chat');
-        Chat.listenDM(uid);
-    }
+        Chat.listen(db.ref('dms/'+ids.join('_')), 'chat-feed');
+    },
+
+    listen: (ref, elId) => {
+        const feed = document.getElementById(elId); if(!feed) return;
+        feed.innerHTML = '';
+        if(State.chatRef) State.chatRef.off(); State.chatRef = ref;
+        
+        let initialLoad = true;
+        setTimeout(() => { initialLoad = false; }, 1500);
+
+        const markRead = (snap) => {
+            const val = snap.val();
+            if (val.uid !== State.user.uid && !val.read) {
+                snap.ref.update({read: true});
+            }
+        };
+
+        ref.limitToLast(50).on('child_added', s => {
+            const d = s.val(), key = s.key;
+            const isMine = d.uid === State.user.uid;
+            
+            if (!isMine && document.getElementById('tab-chat').classList.contains('active') && !document.hidden) {
+                markRead(s);
+            }
+
+            if (!isMine && !initialLoad && (document.hidden || !document.getElementById('tab-chat').classList.contains('active'))) {
+                UI.notify(d.user, d.image ? 'sent an image' : d.text, 'msg', d.avatar);
+            }
+
+            const div = document.createElement('div');
+            div.className = `msg ${isMine?'mine':''}`;
+            div.id = 'msg-'+key;
+            
+            let del = '';
+            if(isMine || State.profile.role==='super') del = `<i class="fas fa-trash" style="margin-left:5px; cursor:pointer; color:#666; font-size:0.8rem;" onclick="Chat.del('${key}')"></i>`;
+
+            const aviId = `avi-${key}`;
+            let statusHtml = '';
+            if (isMine) {
+                const checkClass = d.read ? 'read' : '';
+                statusHtml = `<div class="msg-meta"><span class="msg-checks ${checkClass}"><i class="fas fa-check-double"></i></span></div>`;
+            }
+
+            let prefixHtml = '';
+            if (d.prefix) {
+                prefixHtml = `<span style="color:${d.prefixColor || '#fff'}; margin-right:5px; font-weight:800; font-family:'Exo 2'; text-shadow:0 0 5px ${d.prefixColor};">[${d.prefix}]</span>`;
+            }
+
+            div.innerHTML = `
+                <img id="${aviId}" src="${d.avatar}" class="avatar" onclick="window.Profile.view('${d.uid}')">
+                <div class="bubble">
+                    <div style="font-size:0.75rem; font-weight:700; color:${isMine?'#fff':'#bc13fe'}; margin-bottom:3px;">
+                        ${prefixHtml}${d.user} ${del}
+                    </div>
+                    ${d.text ? `<div>${safe(d.text)}</div>` : ''}
+                    ${d.image ? `<img src="${d.image}" class="msg-img" style="height: 150px; width: auto; max-width: 100%; object-fit: cover; display: block; border-radius: 8px; margin-top: 5px; cursor: pointer;" onclick="showImg(this.src)">` : ''}
+                    ${statusHtml}
+                </div>
+            `;
+            feed.appendChild(div); feed.scrollTop = feed.scrollHeight;
+
+            db.ref(`users/${d.uid}/avatar`).once('value', snap => {
+                if(snap.exists()) {
+                    const realAvatar = snap.val();
+                    const imgEl = document.getElementById(aviId);
+                    if(imgEl && realAvatar !== d.avatar) {
+                        imgEl.src = realAvatar;
+                    }
+                }
+            });
+        });
+
+        ref.limitToLast(50).on('child_changed', s => {
+            const d = s.val();
+            const el = document.getElementById('msg-'+s.key);
+            if (el && d.uid === State.user.uid) {
+                const checks = el.querySelector('.msg-checks');
+                if (checks) {
+                    if (d.read) checks.classList.add('read');
+                    else checks.classList.remove('read');
+                }
+            }
+        });
+
+        ref.on('child_removed', s => { const el=document.getElementById('msg-'+s.key); if(el)el.remove(); });
+    },
+    del: k => UI.confirm("DELETE", "Delete message?", () => State.chatRef.child(k).remove()),
+    confirmEdit: () => {}
 };
 
 document.addEventListener('DOMContentLoaded', () => { Chat.init(); });

@@ -11,19 +11,21 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v53 (PB)</title>
+    <title>NekoCore v53</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style2.css">
     
     <style id="theme-style"></style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    
-    <script src="functions/pocketbase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div id="toast-container"></div>
@@ -61,18 +63,23 @@
                 const text = logo.querySelector('.glitch-text');
                 let i = 0;
 
+                // 1. Печатаем логи (быстро)
                 const interval = setInterval(() => {
                     if (i >= BootLoader.logs.length) {
                         clearInterval(interval);
+                        // 2. Очищаем экран и показываем лого
                         setTimeout(() => {
                             term.style.display = 'none';
                             logo.style.opacity = '1';
+                            
+                            // 3. Ждем и делаем ГЛИТЧ исчезновение
                             setTimeout(() => {
                                 text.classList.add('glitch-out');
+                                // 4. Полностью убираем лоадер
                                 setTimeout(() => {
                                     document.getElementById('loader').classList.add('hidden');
-                                }, 400); 
-                            }, 1500); 
+                                }, 400); // Время совпадает с glitch-fade-out
+                            }, 1500); // Сколько висит логотип (1.5 сек)
                         }, 200);
                         return;
                     }
@@ -90,22 +97,63 @@
                     p.innerText = txt;
                     term.appendChild(p);
                     i++;
-                }, 100); 
+                }, 100); // Скорость строк (100мс)
             }
         };
+        
+        // Запускаем анимацию сразу
         window.addEventListener('load', BootLoader.run);
     </script>
 
     <div id="app-root">
-        <div id="view-auth" class="modal-box hidden">
-            <h1 style="font-family:'Exo 2'; color:#d600ff;">NEKO ID</h1>
-            <input type="email" id="auth-email" placeholder="E-mail">
-            <input type="password" id="auth-pass" placeholder="Password">
-            <input type="text" id="auth-nick" placeholder="Codename" style="display:none;">
-            <button class="btn-solid" onclick="Auth.submit()" style="margin-top:15px;">LOGIN</button>
-            <div style="margin-top:15px; display:flex; justify-content:space-between; font-size:0.8rem; color:#666;">
-                <span onclick="Auth.toggle()" style="cursor:pointer;">Register</span>
-                <span onclick="Auth.reset()" style="cursor:pointer;">Reset</span>
+        <div id="view-auth" class="hidden auth-overlay">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo-glitch" data-text="NEKO ID">NEKO ID</div>
+                    <div class="auth-subtitle">SECURE ACCESS TERMINAL</div>
+                </div>
+
+                <div class="auth-switch-container">
+                    <div class="auth-switch-bg"></div>
+                    <div class="auth-switch-btn active" onclick="Auth.setMode(false)" id="tab-login">LOGIN</div>
+                    <div class="auth-switch-btn" onclick="Auth.setMode(true)" id="tab-reg">JOIN</div>
+                </div>
+
+                <div class="auth-form-body">
+                    
+                    <div class="input-group collapsed" id="group-nick">
+                        <i class="fas fa-user-astronaut input-icon"></i>
+                        <input type="text" id="auth-nick" placeholder=" " autocomplete="off">
+                        <label for="auth-nick">CODENAME</label>
+                        <div class="input-line"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fas fa-at input-icon"></i>
+                        <input type="email" id="auth-email" placeholder=" " autocomplete="off">
+                        <label for="auth-email">EMAIL ADDRESS</label>
+                        <div class="input-line"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <i class="fas fa-key input-icon"></i>
+                        <input type="password" id="auth-pass" placeholder=" ">
+                        <label for="auth-pass">PASSWORD</label>
+                        <i class="fas fa-eye input-reveal" onclick="Auth.togglePassVisibility(this)"></i>
+                        <div class="input-line"></div>
+                    </div>
+
+                </div>
+
+                <button class="btn-cyber" onclick="Auth.submit()">
+                    <span class="btn-content">INITIALIZE_SESSION</span>
+                    <div class="btn-glitch-layers"></div>
+                    <div class="btn-scanline"></div>
+                </button>
+
+                <div class="auth-footer">
+                    <span onclick="Auth.reset()" class="link-hover">FORGOT_CREDENTIALS?</span>
+                </div>
             </div>
         </div>
 
@@ -143,53 +191,82 @@
                 </div>
 
                 <div id="tab-dms" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">MESSAGES</div><div></div></div><div id="dm-list" class="list-container"></div></div>
-                
                 <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
 
                 <div id="tab-settings" class="tab-pane">
-                    <div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SETTINGS</div><div></div></div>
+                    <div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SYSTEM CONFIG</div><div></div></div>
                     <div class="admin-scroll-area"> 
-                        <div class="p-20 flex-col" style="gap:25px;">
-                            <div>
-                                <h4 style="color:#666; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">Identity</h4>
-                                <div style="background:#0e0e12; border:1px solid #333; border-radius:16px; overflow:hidden;" class="panel-box">
+                        <div class="p-20 flex-col">
+                            
+                            <div class="settings-nav">
+                                <button class="settings-nav-btn active" id="btn-set-identity" onclick="Settings.switchTab('identity')">IDENTITY</button>
+                                <button class="settings-nav-btn" id="btn-set-appearance" onclick="Settings.switchTab('appearance')">APPEARANCE</button>
+                            </div>
+
+                            <div id="set-sec-identity" class="settings-section flex-col" style="gap:20px;">
+                                
+                                <div style="background:var(--panel); border:1px solid rgba(255,255,255,0.1); border-radius:16px; overflow:hidden;" class="panel-box">
                                     <div id="my-banner-prev" style="height:120px; background:#222; background-size:cover; background-position:center;"></div>
                                     <div style="padding:0 20px 20px 20px; text-align:center; margin-top:-40px;">
-                                        <img id="my-avi" style="width:80px; height:80px; border-radius:50%; border:4px solid #0e0e12; object-fit:cover; background:#000;" class="panel-border">
+                                        <img id="my-avi" style="width:80px; height:80px; border-radius:50%; border:4px solid var(--panel); object-fit:cover; background:#000;" class="panel-border">
                                         <div id="my-id-badge" style="color:#666; font-family:monospace; margin-top:5px;">ID: ???</div>
                                     </div>
                                 </div>
-                                <div class="file-grid" style="margin-top:15px;">
+                                
+                                <div class="file-grid">
                                     <label class="file-zone" for="avi-in"><i class="fas fa-user"></i><span>Avatar</span></label>
                                     <label class="file-zone" for="banner-in"><i class="fas fa-image"></i><span>Banner</span></label>
                                 </div>
                                 <input type="file" id="avi-in" hidden accept="image/*">
                                 <input type="file" id="banner-in" hidden accept="image/*">
-                                <input type="text" id="my-nick" placeholder="Codename" style="margin-top:10px;">
-                                <textarea id="my-bio" rows="3" placeholder="Bio..." style="margin-top:10px;"></textarea>
-                                <div style="margin-top:15px; padding-top:15px; border-top:1px solid #333;">
-                                    <label style="font-size:0.8rem; color:#888;">Custom Prefix</label>
-                                    <div style="display:flex; gap:10px; margin-top:5px;">
-                                        <input type="text" id="set-prefix" placeholder="e.g. KING" maxlength="10" style="flex:1;">
-                                        <input type="color" id="set-prefix-color" value="#ffffff" style="width:50px; height:40px; padding:0; border:none; background:none;">
+
+                                <div>
+                                    <div class="set-group-title">Public Data</div>
+                                    <input type="text" id="my-nick" placeholder="Codename">
+                                    <textarea id="my-bio" rows="3" placeholder="Bio..."></textarea>
+                                </div>
+
+                                <div>
+                                    <div class="set-group-title">Tags</div>
+                                    <div style="display:flex; gap:10px;">
+                                        <input type="text" id="set-prefix" placeholder="Prefix (e.g. KING)" maxlength="10" style="flex:1;">
+                                        <input type="color" id="set-prefix-color" value="#ffffff" style="width:50px; border-radius:8px;">
                                     </div>
                                 </div>
+
                             </div>
-                            <div>
-                                <h4 style="color:#666; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">Appearance</h4>
-                                <div style="display:flex; flex-direction:column; gap:10px;">
-                                    <div class="setting-row"><span>Accent Color</span><input type="color" id="set-accent" value="#d600ff" oninput="Settings.previewTheme()"></div>
-                                    <div class="setting-row"><span>Background</span><input type="color" id="set-bg" value="#05000a" oninput="Settings.previewTheme()"></div>
-                                    <div class="setting-row"><span>Panel / Sidebar</span><input type="color" id="set-panel" value="#0e0e12" oninput="Settings.previewTheme()"></div>
-                                    <button class="btn-text" onclick="Settings.resetTheme()" style="align-self:flex-start; margin-top:5px; color:#666;">Reset to Default</button>
+
+                            <div id="set-sec-appearance" class="settings-section hidden flex-col" style="gap:20px;">
+                                
+                                <div>
+                                    <div class="set-group-title">Presets</div>
+                                    <div id="theme-presets" class="theme-grid">
+                                        </div>
                                 </div>
+
+                                <div>
+                                    <div class="set-group-title">Manual Override</div>
+                                    <div class="color-picker-row">
+                                        <span>Accent Color</span>
+                                        <input type="color" id="set-accent" oninput="Settings.previewTheme()">
+                                    </div>
+                                    <div class="color-picker-row">
+                                        <span>Background</span>
+                                        <input type="color" id="set-bg" oninput="Settings.previewTheme()">
+                                    </div>
+                                    <div class="color-picker-row">
+                                        <span>Panels / Cards</span>
+                                        <input type="color" id="set-panel" oninput="Settings.previewTheme()">
+                                    </div>
+                                </div>
+
                             </div>
-                            <div><h4 style="color:#666; margin-bottom:10px; text-transform:uppercase; font-size:0.8rem;">Notifications</h4><button class="btn-solid" onclick="UI.notify('System', 'Test notification', 'info')">TEST NOTIFICATION</button></div>
-                            <button class="btn-solid" onclick="Settings.save()">SAVE CHANGES</button>
+
+                            <button class="btn-solid" onclick="Settings.save()" style="margin-top:20px; padding:15px; font-size:1.1rem;">APPLY CHANGES</button>
+
                         </div>
                     </div>
                 </div>
-
                 <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
             </div>
         </div>
@@ -257,25 +334,26 @@
     <script src="functions/utils.js"></script>
     <script src="functions/ui.js"></script>
     <script src="functions/profile.js"></script>
+    <script src="functions/settings.js"></script>
     <script src="functions/chat.js"></script>
     <script src="functions/channels.js"></script>
     <script src="functions/search.js"></script>
     <script src="functions/admin.js"></script>
     <script src="functions/auth.js"></script>
     <script src="functions/main.js"></script>
-    
     <script>
         document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);
         
-        // PWA SERVICE WORKER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 let refreshing;
+                
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     if (refreshing) return;
                     refreshing = true;
                     window.location.reload(); 
                 });
+
                 navigator.serviceWorker.register('./sw.js').then(reg => {
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
