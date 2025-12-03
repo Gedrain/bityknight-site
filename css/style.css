@@ -1,7 +1,9 @@
+
 /* Добавь это в САМУЮ ПЕРВУЮ строку файла css/style.css */
 @import url('https://fonts.googleapis.com/css2?family=Pirata+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
-/* --- NEKO CORE v52 (MINECRAFT EDITION) --- */
+/* --- NEKO CORE v52 (LINUX GLITCH EDITION) --- */
 :root {
     --bg: #05000a;
     --primary: #d600ff;
@@ -296,6 +298,37 @@ input:focus, textarea:focus {
 #custom-confirm .btn-solid { background: linear-gradient(90deg, #00e5ff, #00aaff); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
 #custom-confirm .btn-danger { background: linear-gradient(90deg, #ff0055, #cc0044); box-shadow: 0 0 15px rgba(255, 0, 85, 0.3); border:none; color:#fff; }
 
+/* TOAST NOTIFICATIONS (FIXED) */
+#toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 100000;
+    display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.neko-toast {
+    background: rgba(18, 18, 22, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 15px; border-radius: 12px;
+    width: 320px; pointer-events: auto;
+    display: flex; gap: 15px; align-items: flex-start;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-left: 3px solid var(--primary);
+}
+.neko-toast.hiding { animation: toastSlideOut 0.3s forwards; }
+
+.neko-toast.success { border-left-color: #00ff9d; }
+.neko-toast.error { border-left-color: #ff0055; }
+.neko-toast.msg { border-left-color: var(--secondary); }
+
+.nt-icon { font-size: 1.2rem; display: flex; align-items: center; height: 100%; color: #fff; }
+.nt-content { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.nt-title { font-weight: 800; font-size: 0.9rem; color: #fff; font-family: var(--font-head); }
+.nt-body { font-size: 0.85rem; color: #ccc; line-height: 1.4; word-break: break-word; }
+.nt-time { font-size: 0.7rem; color: #666; margin-top: 5px; font-family: monospace; text-align: right; }
+
+@keyframes toastSlideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes toastSlideOut { to { transform: translateX(100%); opacity: 0; } }
+
 /* RESPONSIVE BASE */
 @media (max-width: 768px) {
     #view-main { grid-template-columns: 1fr; }
@@ -332,130 +365,107 @@ input:focus, textarea:focus {
 @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
 /* =========================================
-   MINECRAFT ENCHANT LOADER
+   LINUX GLITCH LOADER
    ========================================= */
 
 #loader {
     position: fixed; inset: 0; z-index: 99999; 
-    background-color: #120b18;
-    background-image: radial-gradient(circle at 50% 50%, #2a1a35 0%, #120b18 80%);
-    display: flex; justify-content: center; align-items: center;
-    perspective: 1200px; /* Глубина 3D */
+    background-color: #000000 !important;
+    display: flex; flex-direction: column;
     overflow: hidden;
-    transition: opacity 0.8s ease-in-out, visibility 0.8s;
+    font-family: 'JetBrains Mono', monospace;
+    transition: opacity 0.5s ease-out, visibility 0.5s;
 }
 #loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
-/* КНИГА (Контейнер) */
-.enchant-book {
-    position: relative;
-    width: 140px; height: 200px;
-    transform-style: preserve-3d;
-    transform: rotateX(30deg) rotateY(0deg);
-    animation: bookHover 4s ease-in-out infinite;
+/* Консоль с текстом */
+.terminal-container {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    padding: 20px; box-sizing: border-box;
+    color: #33ff00; /* Зеленый терминал */
+    font-size: 14px; line-height: 1.4;
+    overflow: hidden;
+    text-shadow: 0 0 5px rgba(51, 255, 0, 0.5);
+    display: flex; flex-direction: column; justify-content: flex-end;
 }
 
-/* ОБЛОЖКИ И СТРАНИЦЫ */
-.side {
-    position: absolute; width: 140px; height: 200px;
-    top: 0; left: 0;
-    transform-origin: 0% 50%; /* ВАЖНО: Петля слева (корешок) */
-    transform-style: preserve-3d;
-    border-radius: 4px;
-}
+.log-line { margin: 0; white-space: nowrap; opacity: 0.9; }
+.log-err { color: #ff0055; text-shadow: 0 0 5px rgba(255, 0, 85, 0.5); font-weight: bold; }
+.log-warn { color: #ffcc00; }
 
-/* Задняя обложка (статичная база) */
-.back-cover {
-    background: #5d4037;
-    transform: rotateY(-15deg) translateZ(-5px); /* Чуть наклонена назад */
-    border: 4px solid #3e2723;
-    box-shadow: 10px 10px 30px rgba(0,0,0,0.5);
-}
-
-/* Передняя обложка (Анимируется) */
-.front-cover {
-    background: #6d4c41;
-    border: 4px solid #3e2723;
-    transform: rotateY(-25deg) translateZ(5px);
-    z-index: 10;
+/* Логотип NEKOCHAT */
+.glitch-logo-container {
+    position: absolute; inset: 0;
     display: flex; justify-content: center; align-items: center;
-    /* Декор обложки */
-}
-.front-cover::after {
-    content: ''; width: 60%; height: 60%;
-    border: 3px solid #8d6e63; border-radius: 2px;
-}
-
-/* СТРАНИЦЫ (Исправлено: не вылетают) */
-.page {
-    position: absolute;
-    width: 130px; height: 190px;
-    top: 5px; left: 0;
-    background: #eefeef;
-    transform-origin: 0% 50%; /* Вращение от корешка */
-    border-radius: 0 4px 4px 0;
-    background-image: linear-gradient(to right, #ccc 0%, #fff 10%, #fff 100%);
+    background: #000;
+    opacity: 0; /* Скрыт по умолчанию */
+    transition: opacity 1s ease-in;
+    z-index: 10;
 }
 
-.page:nth-child(1) { transform: rotateY(-22deg) translateZ(3px); }
-.page:nth-child(2) { transform: rotateY(-20deg) translateZ(2px); }
-.page:nth-child(3) { transform: rotateY(-18deg) translateZ(1px); }
-
-/* Анимация открытия */
-.loader-opening .front-cover {
-    animation: openCover 1.5s forwards cubic-bezier(0.25, 1, 0.5, 1);
-}
-.loader-opening .page:nth-child(1) { animation: flipPage1 1.5s forwards 0.1s; }
-.loader-opening .page:nth-child(2) { animation: flipPage2 1.5s forwards 0.2s; }
-.loader-opening .page:nth-child(3) { animation: flipPage3 1.5s forwards 0.3s; }
-
-/* ТЕКСТ */
-.enchant-text {
-    position: absolute; bottom: 15%;
-    color: #b39ddb; font-family: monospace;
-    font-size: 1.2rem; letter-spacing: 4px; text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(179, 157, 219, 0.5);
-    animation: textPulse 2s infinite;
+.glitch-text {
+    color: #fff;
+    font-size: 4rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    position: relative;
+    letter-spacing: 5px;
 }
 
-/* РУНЫ */
-.magic-glyph {
-    position: absolute;
-    color: #d600ff;
-    font-family: 'Exo 2', sans-serif;
-    font-weight: 800; font-size: 1.5rem;
-    text-shadow: 0 0 10px #d600ff, 0 0 20px #fff;
-    pointer-events: none;
-    opacity: 0;
-    z-index: 20;
+/* Глитч эффект */
+.glitch-text::before, .glitch-text::after {
+    content: attr(data-text);
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000;
+}
+.glitch-text::before {
+    left: 2px; text-shadow: -1px 0 #ff0055;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim 5s infinite linear alternate-reverse;
+}
+.glitch-text::after {
+    left: -2px; text-shadow: -1px 0 #00e5ff;
+    clip: rect(44px, 450px, 56px, 0);
+    animation: glitch-anim2 5s infinite linear alternate-reverse;
 }
 
-/* КЛЮЧЕВЫЕ КАДРЫ */
-@keyframes bookHover {
-    0%, 100% { transform: rotateX(30deg) rotateY(0deg) translateY(0); }
-    50% { transform: rotateX(35deg) rotateY(5deg) translateY(-15px); }
+/* Анимация исчезновения через глитч */
+.glitch-out {
+    animation: glitch-fade-out 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-@keyframes openCover { to { transform: rotateY(-160deg); } }
-@keyframes flipPage1 { to { transform: rotateY(-155deg); } }
-@keyframes flipPage2 { to { transform: rotateY(-150deg); } }
-@keyframes flipPage3 { to { transform: rotateY(-145deg); } }
-
-@keyframes runeSuck {
-    0% { opacity: 0; transform: translate(var(--sx), var(--sy)) scale(0.5); }
-    20% { opacity: 1; }
-    100% { opacity: 0; transform: translate(0, 0) scale(0.2); } /* Летят в центр (0,0) */
+@keyframes glitch-anim {
+    0% { clip: rect(12px, 9999px, 5px, 0); }
+    5% { clip: rect(89px, 9999px, 76px, 0); }
+    10% { clip: rect(32px, 9999px, 12px, 0); }
+    15% { clip: rect(100px, 9999px, 98px, 0); }
+    20% { clip: rect(10px, 9999px, 80px, 0); }
+    25% { clip: rect(65px, 9999px, 23px, 0); }
+    30% { clip: rect(3px, 9999px, 65px, 0); }
+    35% { clip: rect(82px, 9999px, 1px, 0); }
+    40% { clip: rect(21px, 9999px, 43px, 0); }
+    45% { clip: rect(54px, 9999px, 87px, 0); }
+    50% { clip: rect(12px, 9999px, 5px, 0); }
+    55% { clip: rect(76px, 9999px, 43px, 0); }
+    60% { clip: rect(3px, 9999px, 21px, 0); }
+    65% { clip: rect(98px, 9999px, 32px, 0); }
+    70% { clip: rect(56px, 9999px, 89px, 0); }
+    75% { clip: rect(23px, 9999px, 12px, 0); }
+    80% { clip: rect(8px, 9999px, 56px, 0); }
+    85% { clip: rect(43px, 9999px, 3px, 0); }
+    90% { clip: rect(1px, 9999px, 87px, 0); }
+    95% { clip: rect(65px, 9999px, 21px, 0); }
+    100% { clip: rect(32px, 9999px, 65px, 0); }
+}
+@keyframes glitch-anim2 {
+    0% { clip: rect(65px, 9999px, 21px, 0); }
+    100% { clip: rect(3px, 9999px, 98px, 0); }
+}
+@keyframes glitch-fade-out {
+    0% { opacity: 1; transform: scale(1); filter: hue-rotate(0deg); }
+    50% { opacity: 0.8; transform: scale(1.1) skew(10deg); filter: hue-rotate(90deg) blur(2px); }
+    100% { opacity: 0; transform: scale(1.5) skew(-20deg); filter: hue-rotate(180deg) blur(10px); }
 }
 
-@keyframes textPulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 20px #d600ff; } }
-
-/* Финальная вспышка */
-.loader-finish .enchant-book {
-    animation: finalFlash 0.5s forwards !important;
-}
-@keyframes finalFlash {
-    0% { transform: scale(1); filter: brightness(1); }
-    50% { transform: scale(1.2); filter: brightness(10) drop-shadow(0 0 50px #d600ff); }
-    100% { transform: scale(0); opacity: 0; }
-}
+@media (max-width: 768px) { .glitch-text { font-size: 2.5rem; } }
 }

@@ -1,3 +1,7 @@
+{
+type: uploaded file
+fileName: index.html
+fullContent:
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -31,76 +35,77 @@
     <div id="bg-canvas"></div> 
 
     <div id="loader">
-        <div class="enchant-book">
-            <div class="side back-cover"></div>
-            
-            <div class="side page"></div>
-            <div class="side page"></div>
-            <div class="side page"></div>
-            
-            <div class="side front-cover"></div>
+        <div id="boot-log" class="terminal-container"></div>
+        <div id="glitch-logo" class="glitch-logo-container">
+            <div class="glitch-text" data-text="NEKOCHAT">NEKOCHAT</div>
         </div>
-        
-        <div class="enchant-text">Enchanting...</div>
-        
-        <div id="glyph-container" style="position:absolute; top:50%; left:50%; width:0; height:0; overflow:visible; pointer-events:none; z-index:20;"></div>
     </div>
 
     <script>
-        const Enchanter = {
-            glyphs: "⌇⍑⍓⍆⍇⍈⍉⍊⍋⍌⍍⍎⍏⍐⍑⍒⍓⍔⍕⍖⍗⍘⍙⍚⍛⍜⍝⍞⍟⍠⍡⍢⍣⍤⍥⍦⍧⍨⍩⍪⍫⍬⍭⍮⍯⍰⍱⍲⍳⍴⍵⍶⍷⍸⍹⍺⍻⍼⍽⍾⍿",
+        const BootLoader = {
+            logs: [
+                "[ OK ] Started Show Plymouth Boot Screen.",
+                "[ OK ] Reached target Paths.",
+                "[ OK ] Reached target Basic System.",
+                "[ ERRO ] Failed to start Network Name Resolution.",
+                "[ ERRO ] Kernel Panic - not syncing: VFS: Unable to mount root fs",
+                "[ WARN ] CPU0: Temperature above threshold",
+                "Loading kernel modules...",
+                "Applying power management settings...",
+                "[ FAIL ] Failed to load module: nvidia_drm",
+                "Segmentation fault (core dumped)",
+                "CORRUPTION DETECTED AT ADDRESS 0x0000F",
+                "INITIALIZING NEKO PROTOCOL...",
+                "BYPASSING SECURITY LAYER...",
+                "ACCESS GRANTED."
+            ],
             
-            spawnGlyph: () => {
-                const container = document.getElementById('glyph-container');
-                if(!container) return;
+            run: () => {
+                const term = document.getElementById('boot-log');
+                const logo = document.getElementById('glitch-logo');
+                const text = logo.querySelector('.glitch-text');
+                let i = 0;
 
-                const glyph = document.createElement('div');
-                glyph.className = 'magic-glyph';
-                glyph.innerText = Enchanter.glyphs[Math.floor(Math.random() * Enchanter.glyphs.length)];
-                
-                // Рандомная позиция старта (далеко от центра)
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 250 + Math.random() * 200; // Радиус появления
-                const x = Math.cos(angle) * distance;
-                const y = Math.sin(angle) * distance;
-
-                // Передаем координаты старта в CSS
-                glyph.style.setProperty('--sx', x + 'px');
-                glyph.style.setProperty('--sy', y + 'px');
-                
-                // Анимация полета ВНУТРЬ (к 0,0)
-                glyph.style.animation = `runeSuck ${1 + Math.random()}s ease-in forwards`;
-                
-                container.appendChild(glyph);
-                setTimeout(() => glyph.remove(), 1500);
-            },
-
-            start: () => {
-                // 1. Руны начинают лететь в закрытую книгу
-                const interval = setInterval(Enchanter.spawnGlyph, 60);
-                
-                // 2. Через 1.5 сек книга ОТКРЫВАЕТСЯ
-                setTimeout(() => {
-                    const l = document.getElementById('loader');
-                    if(l) l.classList.add('loader-opening');
-                }, 1500);
-
-                // 3. Через 3.5 сек ФИНАЛ (вспышка)
-                setTimeout(() => {
-                    clearInterval(interval);
-                    const l = document.getElementById('loader');
-                    if(l) {
-                        l.classList.add('loader-finish');
-                        // Скрытие DOM элемента
+                // 1. Печатаем логи (быстро)
+                const interval = setInterval(() => {
+                    if (i >= BootLoader.logs.length) {
+                        clearInterval(interval);
+                        // 2. Очищаем экран и показываем лого
                         setTimeout(() => {
-                            l.classList.add('hidden');
-                        }, 600);
+                            term.style.display = 'none';
+                            logo.style.opacity = '1';
+                            
+                            // 3. Ждем и делаем ГЛИТЧ исчезновение
+                            setTimeout(() => {
+                                text.classList.add('glitch-out');
+                                // 4. Полностью убираем лоадер
+                                setTimeout(() => {
+                                    document.getElementById('loader').classList.add('hidden');
+                                }, 400); // Время совпадает с glitch-fade-out
+                            }, 1500); // Сколько висит логотип (1.5 сек)
+                        }, 200);
+                        return;
                     }
-                }, 3500);
+
+                    const p = document.createElement('p');
+                    p.className = 'log-line';
+                    const txt = BootLoader.logs[i];
+                    
+                    if (txt.includes('[ ERRO ]') || txt.includes('[ FAIL ]') || txt.includes('fault') || txt.includes('CORRUPTION')) {
+                        p.classList.add('log-err');
+                    } else if (txt.includes('[ WARN ]')) {
+                        p.classList.add('log-warn');
+                    }
+                    
+                    p.innerText = txt;
+                    term.appendChild(p);
+                    i++;
+                }, 100); // Скорость строк (100мс)
             }
         };
-
-        window.addEventListener('load', Enchanter.start);
+        
+        // Запускаем анимацию сразу
+        window.addEventListener('load', BootLoader.run);
     </script>
 
     <div id="app-root">
@@ -278,3 +283,4 @@
     </script>
 </body>
 </html>
+}
