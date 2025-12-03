@@ -173,6 +173,38 @@ input:focus, textarea:focus {
 .member-seen { font-size: 0.7rem; color: #666; font-family: monospace; margin-top: 2px; }
 .member-role { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); }
 
+/* ADMIN & SETTINGS SCROLL AREA */
+.admin-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+}
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    padding: 20px;
+}
+.admin-card {
+    background: #16161c;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.admin-header { display: flex; align-items: center; gap: 10px; }
+.admin-avi { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.admin-info h4 { margin: 0; color: #fff; font-size: 0.95rem; }
+.admin-info span { font-size: 0.75rem; color: #777; font-family: monospace; }
+.admin-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
+.act-btn {
+    padding: 6px 12px; border-radius: 6px; border: none;
+    background: #333; color: #fff; font-size: 0.7rem; font-weight: 700;
+    cursor: pointer;
+}
+.act-btn.danger { background: rgba(255,0,85,0.2); color: #ff0055; }
+.mb-20 { margin-bottom: 20px; }
+
 /* EDITOR PREVIEW */
 .ch-preview-box {
     width: 100%; height: 140px; position: relative; margin-bottom: 20px;
@@ -199,26 +231,35 @@ input:focus, textarea:focus {
 }
 .file-zone:hover { border-color: var(--primary); background: rgba(214,0,255,0.05); color: #fff; }
 
-/* NEKOID ACCESS CARD (WIDE) */
+/* NEKOID ACCESS CARD (RESPONSIVE) */
 .profile-card-modal {
     width: 100%; max-width: 520px; padding: 0 !important;
-    background: #09090b; border: 1px solid #333; border-radius: 20px; overflow: hidden; position: relative;
+    background: #09090b; border: 1px solid #333; border-radius: 20px; 
+    position: relative;
     box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.08);
+    
+    /* SCROLL FIX FOR MOBILE */
+    max-height: 90vh; /* Ограничиваем высоту */
+    overflow-y: auto; /* Включаем скролл, если не влазит */
+    display: flex; flex-direction: column;
 }
 .neko-card-header {
-    height: 36px; background: linear-gradient(90deg, #000, #111); display: flex; justify-content: space-between; align-items: center;
+    height: 36px; flex-shrink: 0; /* Шапка не сжимается */
+    background: linear-gradient(90deg, #000, #111); display: flex; justify-content: space-between; align-items: center;
     padding: 0 20px; font-family: monospace; font-size: 0.85rem; color: #666; letter-spacing: 3px;
     border-bottom: 1px solid #222; text-transform: uppercase;
 }
-.p-banner { height: 160px; width: 100%; background-color: #1a1a1a; background-size: cover; background-position: center; position: relative; }
+.p-banner { height: 160px; width: 100%; background-color: #1a1a1a; background-size: cover; background-position: center; position: relative; flex-shrink: 0; }
 .p-banner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, #09090b 2%, transparent 100%); }
-.p-content-grid { display: flex; gap: 25px; padding: 0 25px; margin-top: -50px; position: relative; z-index: 2; }
+
+.p-content-grid { display: flex; gap: 25px; padding: 0 25px; margin-top: -50px; position: relative; z-index: 2; flex-shrink: 0; }
 .p-left-col { display: flex; flex-direction: column; align-items: center; gap: 12px; flex-shrink: 0; }
 .p-avi-wrapper { width: 120px; height: 120px; position: relative; border-radius: 16px; background: #09090b; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
 .p-avi { width: 100%; height: 100%; border-radius: 16px; object-fit: cover; background: #000; border: 4px solid #09090b; }
 .p-status-dot { position: absolute; bottom: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; border: 4px solid #09090b; background: #444; z-index: 5; }
 .p-status-dot.online { background: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
 .p-id-chip { font-family: monospace; font-size: 0.9rem; background: #111; color: #777; padding: 6px 10px; border-radius: 6px; border: 1px solid #222; letter-spacing: 1px; }
+
 .p-right-col { flex: 1; padding-top: 55px; display: flex; flex-direction: column; gap: 15px; }
 .p-main-info { display: flex; flex-direction: column; gap: 2px; }
 .p-name { font-family: var(--font-head); font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
@@ -227,12 +268,13 @@ input:focus, textarea:focus {
 .p-label { color: #555; font-weight: 700; font-size: 0.75rem; letter-spacing: 1px; }
 .p-value { color: #ddd; font-weight: 600; }
 .role-badge { font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
-.p-badges-section { padding: 20px 25px; margin-top: 10px; }
+.p-badges-section { padding: 20px 25px; margin-top: 10px; flex-shrink: 0; }
 .p-label-small { font-size: 0.7rem; color: #444; font-weight: 800; margin-bottom: 10px; letter-spacing: 2px; text-transform: uppercase; }
 .p-badges-list { display: flex; gap: 10px; flex-wrap: wrap; }
 .p-badge-box { width: 42px; height: 42px; background: #111; border: 1px solid #222; border-radius: 8px; display: flex; justify-content: center; align-items: center; color: #666; font-size: 1.2rem; transition: 0.2s; }
 .p-badge-box:hover { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 15px var(--primary-dim); transform: translateY(-2px); background: rgba(255,255,255,0.02); }
-.p-footer-actions { padding: 0 25px 25px 25px; display: flex; flex-direction: column; gap: 12px; }
+
+.p-footer-actions { padding: 0 25px 25px 25px; display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; margin-top: auto; }
 .profile-card-modal .btn-solid, .profile-card-modal .btn-danger { padding: 14px; font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; }
 
 /* MODALS */
@@ -254,12 +296,39 @@ input:focus, textarea:focus {
 #custom-confirm .btn-solid { background: linear-gradient(90deg, #00e5ff, #00aaff); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); }
 #custom-confirm .btn-danger { background: linear-gradient(90deg, #ff0055, #cc0044); box-shadow: 0 0 15px rgba(255, 0, 85, 0.3); border:none; color:#fff; }
 
-/* RESPONSIVE */
+/* RESPONSIVE BASE */
 @media (max-width: 768px) {
     #view-main { grid-template-columns: 1fr; }
     .sidebar { position: fixed; top:0; bottom:0; left:0; width: 280px; transform: translateX(-100%); box-shadow: 10px 0 50px #000; }
     .sidebar.open { transform: translateX(0); }
 }
+
+/* MOBILE PROFILE CARD SCALING */
+/* Уменьшаем элементы, если экран маленький по ширине ИЛИ по высоте */
+@media (max-width: 500px), (max-height: 800px) {
+    .profile-card-modal { width: 95%; max-height: 98vh; }
+    
+    .p-banner { height: 100px; } /* Баннер меньше */
+    .p-content-grid { margin-top: -30px; gap: 15px; padding: 0 15px; } /* Поднимаем контент */
+    .p-avi-wrapper { width: 80px; height: 80px; border-radius: 12px; } /* Аватарка меньше */
+    .p-avi { border-radius: 12px; }
+    .p-status-dot { width: 16px; height: 16px; bottom: -2px; right: -2px; }
+    
+    .p-right-col { padding-top: 35px; gap: 8px; } /* Меньше отступ справа */
+    .p-name { font-size: 1.5rem; } /* Имя меньше */
+    .p-id-chip { padding: 4px 6px; font-size: 0.75rem; }
+    
+    .p-stats-grid { padding: 10px; gap: 4px; }
+    .p-stat-row { font-size: 0.8rem; }
+    
+    .p-badges-section { padding: 15px; margin-top: 5px; }
+    .p-label-small { margin-bottom: 5px; }
+    .p-badge-box { width: 36px; height: 36px; font-size: 1rem; }
+    
+    .p-footer-actions { padding: 0 15px 15px 15px; gap: 8px; }
+    .profile-card-modal .btn-solid, .profile-card-modal .btn-danger { padding: 10px; font-size: 0.9rem; }
+}
+
 @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
 
 /* =========================================
@@ -388,4 +457,5 @@ input:focus, textarea:focus {
     0% { transform: scale(1); filter: brightness(1); }
     50% { transform: scale(1.2); filter: brightness(10) drop-shadow(0 0 50px #d600ff); }
     100% { transform: scale(0); opacity: 0; }
+}
 }
