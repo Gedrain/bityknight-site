@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v64</title>
+    <title>NekoCore v66</title>
     
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <link rel="stylesheet" href="css/style.css?v=65">
-    <link rel="stylesheet" href="css/style2.css?v=65">
+    <link rel="stylesheet" href="css/style.css?v=66">
+    <link rel="stylesheet" href="css/style2.css?v=66">
     <style id="theme-style"></style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -181,21 +181,58 @@
                         </div>
                     </div>
                     <div id="voice-list" class="list-container"></div>
-                    
-                    <div id="voice-control-bar" class="voice-control-bar hidden">
-                        <div class="v-status-light"></div>
-                        <div class="v-ctrl-info">Voice Connected</div>
-                        <div class="v-buttons">
-                            <button id="btn-v-mute" onclick="Voice.toggleMute()"><i class="fas fa-microphone"></i></button>
-                            <button id="btn-v-deaf" onclick="Voice.toggleDeafen()"><i class="fas fa-volume-up"></i></button>
-                            <button id="btn-v-leave" class="danger" onclick="Voice.leave()"><i class="fas fa-phone-slash"></i></button>
-                        </div>
-                    </div>
                 </div>
 
                 <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
                 <div id="tab-settings" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SYSTEM CONFIG</div><div></div></div><div class="admin-scroll-area"><div id="settings-dynamic-area" class="p-20 flex-col"></div></div></div>
                 <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
+            </div>
+            
+            <div id="voice-control-bar" class="voice-control-bar hidden">
+                <div class="v-status-light"></div>
+                <div class="v-ctrl-info" id="v-ctrl-text">Voice Connected</div>
+                <div class="v-buttons">
+                    <button id="btn-v-mute" onclick="Voice.toggleMute()"><i class="fas fa-microphone"></i></button>
+                    <button id="btn-v-deaf" onclick="Voice.toggleDeafen()"><i class="fas fa-volume-up"></i></button>
+                    <button id="btn-v-leave" class="danger" onclick="Voice.leave()"><i class="fas fa-phone-slash"></i></button>
+                </div>
+            </div>
+
+            <div id="call-overlay-sidebar" class="call-sidebar hidden">
+                <div class="cs-header"><div class="v-status-light"></div><span id="cs-status-text">CALLING...</span></div>
+                
+                <div class="cs-user-info">
+                    <img id="cs-avi" src="https://via.placeholder.com/80" class="cs-avi">
+                    <div id="cs-name" class="cs-name">Unknown</div>
+                </div>
+
+                <div class="cs-volume-section">
+                    <label><i class="fas fa-volume-up"></i> User Volume</label>
+                    <input type="range" id="cs-remote-vol" min="0" max="200" value="100" oninput="Voice.updateActiveRemoteVolume(this.value)">
+                </div>
+
+                <div class="cs-controls">
+                    <button id="btn-cs-mute" class="cs-btn" onclick="Voice.toggleMute()"><i class="fas fa-microphone"></i></button>
+                    <button id="btn-cs-deaf" class="cs-btn" onclick="Voice.toggleDeafen()"><i class="fas fa-headphones"></i></button>
+                    <button class="cs-btn danger" onclick="Voice.leave()"><i class="fas fa-phone-slash"></i></button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="modal-incoming-call" class="modal-overlay">
+        <div class="incoming-call-box">
+            <div class="inc-ring-effect"></div>
+            <div class="inc-ring-effect" style="animation-delay: 0.5s"></div>
+            <img id="inc-call-avi" src="https://via.placeholder.com/100" class="inc-avi">
+            <div class="inc-info">
+                <div class="inc-label">INCOMING TRANSMISSION</div>
+                <div id="inc-call-name" class="inc-name">Unknown User</div>
+            </div>
+            <div class="inc-actions">
+                <button class="btn-inc-decline" onclick="Voice.rejectCall()"><i class="fas fa-times"></i></button>
+                <button class="btn-inc-accept" onclick="Voice.acceptCall()"><i class="fas fa-phone"></i></button>
             </div>
         </div>
     </div>

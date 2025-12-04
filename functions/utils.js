@@ -58,7 +58,49 @@ window.Block = {
             else { ref.set(true); UI.toast("Blocked"); document.getElementById('btn-block').innerText="UNBLOCK"; }
         });
     },
+    // Удалить по UID (для списка в настройках)
+    remove: (targetUid) => {
+        db.ref('users/'+State.user.uid+'/blocked/'+targetUid).remove()
+          .then(() => UI.toast("User unblocked"));
+    },
     check: (targetUid) => {
         return db.ref('users/'+targetUid+'/blocked/'+State.user.uid).once('value').then(s => s.exists());
+    },
+    // Проверка, заблокировал ли Я этого пользователя (чтобы скрыть его сообщения)
+    isBlockedByMe: (targetUid) => {
+        return db.ref('users/'+State.user.uid+'/blocked/'+targetUid).once('value').then(s => s.exists());
+    }
+};
+
+window.Privacy = {
+    // Проверка прав перед действием (targetUid - кому звоним/пишем)
+    // type: 'dm' или 'call'
+    check: async (targetUid, type) => {
+        try {
+            const snap = await db.ref('users/' + targetUid).once('value');
+            const user = snap.val();
+            if (!user) return { allowed: false, error: "User not found" };
+
+            // 1. Проверка Черного Списка (Blocked)
+            // Если targetUid заблокировал State.user.uid
+            if (user.blocked && user.blocked[State.user.uid]) {
+                return { allowed: false, error: "You are blocked by this user." };
+            }
+
+            // 2. Проверка настроек приватности
+            const privacy = user.privacy || {};
+            
+            // По умолчанию разрешено, если настройки нет
+            const allowDMs = privacy.allowDMs !== false; 
+            const allowCalls = privacy.allowCalls !== false;
+
+            if (type === 'dm' && !allowDMs) return { allowed: false, error: "This user has disabled DMs." };
+            if (type === 'call' && !allowCalls) return { allowed: false, error: "This user is not accepting calls." };
+
+            return { allowed: true };
+        } catch (e) {
+            console.error(e);
+            return { allowed: false, error: "Connection error" };
+        }
     }
 };

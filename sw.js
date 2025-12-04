@@ -1,5 +1,5 @@
-const CACHE_NAME = 'neko-core-v65'; // Версия поднята для принудительного обновления
-const DYNAMIC_CACHE = 'neko-dynamic-v65';
+const CACHE_NAME = 'neko-core-v66'; // ВЕРСИЯ ОБНОВЛЕНА
+const DYNAMIC_CACHE = 'neko-dynamic-v66';
 
 const ASSETS = [
     './',
@@ -11,8 +11,9 @@ const ASSETS = [
     './icon.png'
 ];
 
+// Установка: кэшируем статику и сразу активируем SW
 self.addEventListener('install', (event) => {
-    self.skipWaiting(); 
+    self.skipWaiting(); // Заставляет новый SW активироваться немедленно, не дожидаясь закрытия вкладок
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS);
@@ -20,6 +21,7 @@ self.addEventListener('install', (event) => {
     );
 });
 
+// Активация: удаляем старые кэши (v65 и ниже)
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
@@ -30,27 +32,31 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
-        }).then(() => self.clients.claim()) 
+        }).then(() => self.clients.claim()) // Заставляет SW сразу взять контроль над открытыми страницами
     );
 });
 
+// Перехват запросов
 self.addEventListener('fetch', (event) => {
     if (!event.request.url.startsWith(self.location.origin)) return;
 
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
+                // Если сеть доступна — обновляем динамический кэш
                 return caches.open(DYNAMIC_CACHE).then((cache) => {
                     cache.put(event.request, networkResponse.clone());
                     return networkResponse;
                 });
             })
             .catch(() => {
+                // Если оффлайн — берем из кэша
                 return caches.match(event.request);
             })
     );
 });
 
+// Push-уведомления
 self.addEventListener('push', function(event) {
     if (!(self.Notification && self.Notification.permission === 'granted')) {
         return;

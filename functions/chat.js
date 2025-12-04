@@ -26,11 +26,59 @@ const Chat = {
     finishRec: () => { if(!Chat.mediaRecorder || !Chat.isRecording) return; Chat.mediaRecorder.onstop = () => { const audioBlob = new Blob(Chat.audioChunks, { type: 'audio/webm' }); blobToBase64(audioBlob, (base64Audio) => { Chat.pushMessage(null, '', base64Audio); }); Chat.mediaRecorder.stream.getTracks().forEach(t => t.stop()); }; Chat.mediaRecorder.stop(); Chat.resetRecUI(); },
     resetRecUI: () => { Chat.isRecording = false; clearInterval(Chat.recInterval); document.getElementById('recording-ui').classList.add('hidden'); document.getElementById('chat-input-controls').classList.remove('hidden'); },
     
-    send: () => { const txtEl = document.getElementById('msg-in'); const txt = txtEl.value.trim(); if (!txt && !Chat.pendingImage) return; Chat.pushMessage(Chat.pendingImage, txt, null); txtEl.value = ''; Chat.clearPreview(); },
+    send: async () => { 
+        const txtEl = document.getElementById('msg-in'); 
+        const txt = txtEl.value.trim(); 
+        if (!txt && !Chat.pendingImage) return; 
+
+        // --- PRIVACY CHECK FOR DMs ---
+        if(State.chatMode === 'dm' && State.dmTarget) {
+             const check = await Privacy.check(State.dmTarget, 'dm');
+             if(!check.allowed) {
+                 UI.toast(check.error || "Message blocked", "error");
+                 return;
+             }
+        }
+        // -----------------------------
+
+        Chat.pushMessage(Chat.pendingImage, txt, null); 
+        txtEl.value = ''; 
+        Chat.clearPreview(); 
+    },
+
     pushMessage: (img, txt, audio) => { if(!State.chatRef) return; State.chatRef.push({ uid: State.user.uid, user: State.profile.displayName, avatar: State.profile.avatar, prefix: State.profile.prefix || null, prefixColor: State.profile.prefixColor || null, role: State.profile.role, text: txt || '', image: img || null, audio: audio || null, ts: firebase.database.ServerValue.TIMESTAMP, read: false }); },
     
     loadDMs: () => { const l = document.getElementById('dm-list'); l.innerHTML = ''; db.ref('dms').on('value', s => { l.innerHTML = ''; s.forEach(c => { if(c.key.includes(State.user.uid)) { const otherId = c.key.split('_').find(k => k !== State.user.uid); if(otherId) { let localUnread = 0; const messages = c.val(); Object.values(messages).forEach(m => { if (m.uid !== State.user.uid && !m.read) localUnread++; }); db.ref('users/'+otherId).once('value', us => { const u = us.val(); if(!u) return; const d = document.createElement('div'); d.className = 'channel-card'; const bannerStyle = u.banner ? `background-image: url('${u.banner}')` : ''; const badgeHtml = localUnread > 0 ? `<span class="badge-count visible" style="margin-left:auto;">${localUnread}</span>` : ''; const avatar = u.avatar || 'https://via.placeholder.com/100'; d.innerHTML = `<div class="ch-card-banner" style="${bannerStyle}"></div><div class="ch-card-body"><img src="${avatar}" class="ch-card-avi"><div class="ch-card-info"><div class="ch-name">${u.displayName}</div><div class="ch-meta">Private Chat</div></div>${badgeHtml}</div>`; d.onclick = () => Chat.startDM(otherId, u.displayName); l.appendChild(d); }); } } }); }); },
-    startDM: (targetId, targetName) => { const tid = targetId || State.dmTarget; if(!tid) return console.error("No target for DM"); State.chatMode = 'dm'; const rightBtn = document.getElementById('chat-top-right'); if(rightBtn) rightBtn.innerHTML = ''; const ids = [State.user.uid, tid].sort(); document.getElementById('modal-user').classList.remove('open'); if(!targetName) { const nameEl = document.getElementById('u-name'); targetName = nameEl ? nameEl.innerText : 'Chat'; } const titleEl = document.getElementById('chat-title'); if(titleEl) { titleEl.innerHTML = `${targetName} <i class="fas fa-user-circle" style="font-size:0.7em; opacity:0.5; margin-left:8px;"></i>`; titleEl.classList.add('clickable-header'); titleEl.onclick = () => window.Profile.view(tid); } Route('chat'); Chat.listen(db.ref('dms/'+ids.join('_')), 'chat-feed'); },
+    
+    startDM: async (targetId, targetName) => { 
+        const tid = targetId || State.dmTarget; 
+        if(!tid) return console.error("No target for DM"); 
+
+        // --- PRIVACY CHECK ON OPEN ---
+        const check = await Privacy.check(tid, 'dm');
+        if(!check.allowed) {
+            UI.toast(check.error || "Cannot open DM", "error");
+            // Optional: return; // Можно не открывать, если хотим жестко запретить
+        }
+        // -----------------------------
+        
+        State.chatMode = 'dm'; 
+        State.dmTarget = tid; // Ensure target is set
+        
+        // --- BUTTON FOR CALL ---
+        const rightBtn = document.getElementById('chat-top-right'); 
+        if(rightBtn) {
+            rightBtn.innerHTML = `<i class="fas fa-phone-alt" style="cursor:pointer; color:var(--primary); font-size:1.1rem; padding:10px;" onclick="Voice.callUser('${tid}')"></i>`;
+        }
+        // -----------------------
+
+        const ids = [State.user.uid, tid].sort(); 
+        document.getElementById('modal-user').classList.remove('open'); 
+        if(!targetName) { const nameEl = document.getElementById('u-name'); targetName = nameEl ? nameEl.innerText : 'Chat'; } 
+        const titleEl = document.getElementById('chat-title'); 
+        if(titleEl) { titleEl.innerHTML = `${targetName} <i class="fas fa-user-circle" style="font-size:0.7em; opacity:0.5; margin-left:8px;"></i>`; titleEl.classList.add('clickable-header'); titleEl.onclick = () => window.Profile.view(tid); } 
+        Route('chat'); Chat.listen(db.ref('dms/'+ids.join('_')), 'chat-feed'); 
+    },
     
     decryptEffect: (element) => { const originalText = element.innerText; if(!originalText || originalText.length === 0) return; const chars = "01"; let iterations = 0; const speed = 30; element.style.fontFamily = "'JetBrains Mono', monospace"; element.style.color = "var(--secondary)"; const interval = setInterval(() => { element.innerText = originalText.split("").map((letter, index) => { if (index < iterations) return originalText[index]; return chars[Math.floor(Math.random() * 2)]; }).join(""); if (iterations >= originalText.length) { clearInterval(interval); element.style.color = ""; element.style.fontFamily = ""; } iterations += 1 / 2; }, speed); },
     
@@ -106,8 +154,17 @@ const Chat = {
         const feed = document.getElementById(elId); if(!feed) return; feed.innerHTML = ''; if(State.chatRef) State.chatRef.off(); State.chatRef = ref;
         let initialLoad = true; setTimeout(() => { initialLoad = false; }, 2000);
         const markRead = (snap) => { const val = snap.val(); if (val.uid !== State.user.uid && !val.read) snap.ref.update({read: true}); };
-        ref.limitToLast(50).on('child_added', s => {
+        
+        ref.limitToLast(50).on('child_added', async s => {
             const d = s.val(), key = s.key; const isMine = d.uid === State.user.uid;
+
+            // --- BLOCK CHECK ---
+            if(!isMine) {
+                const isBlocked = await Block.isBlockedByMe(d.uid);
+                if(isBlocked) return; // Don't render message
+            }
+            // -------------------
+
             if (!isMine && document.getElementById('tab-chat').classList.contains('active') && !document.hidden) markRead(s);
             if (!isMine && !initialLoad && (document.hidden || !document.getElementById('tab-chat').classList.contains('active'))) { let notifText = d.text; if(d.audio) notifText = '🎤 Voice Message'; else if(d.image) notifText = '📷 Image'; UI.notify(d.user, notifText, 'msg', d.avatar); }
             const div = document.createElement('div'); div.className = `msg ${isMine?'mine':''}`; div.id = 'msg-'+key;

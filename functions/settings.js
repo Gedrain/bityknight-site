@@ -23,7 +23,6 @@ window.Settings = {
     },
 
     init: () => {
-        // Загрузка темы из памяти браузера (МГНОВЕННО)
         const localTheme = localStorage.getItem('neko_theme_config');
         if (localTheme) {
             try { Settings.config = JSON.parse(localTheme); Settings.applyTheme(Settings.config); } catch(e){}
@@ -55,7 +54,6 @@ window.Settings = {
         };
     },
 
-    // --- COLOR PICKER LOGIC ---
     openPicker: (targetId, initialColor) => {
         Settings.pickerTarget = targetId;
         Settings.pickerColor = initialColor || '#ffffff';
@@ -136,9 +134,101 @@ window.Settings = {
                 <div class="set-menu-card" onclick="Settings.renderProfileEditor()"><i class="fas fa-id-card"></i><span>IDENTITY</span><div class="sm-desc">Avatar, Banner, Bio</div></div>
                 <div class="set-menu-card" onclick="Settings.renderAppearanceEditor()"><i class="fas fa-paint-brush"></i><span>APPEARANCE</span><div class="sm-desc">Colors, Fonts, UI</div></div>
                 <div class="set-menu-card" onclick="Settings.renderVoiceSettings()"><i class="fas fa-microphone-lines"></i><span>AUDIO / VOICE</span><div class="sm-desc">Inputs, Outputs, Volume</div></div>
+                <div class="set-menu-card" onclick="Settings.renderPrivacySettings()"><i class="fas fa-user-shield"></i><span>PRIVACY</span><div class="sm-desc">Blocklist, DMs, Calls</div></div>
             </div>
             <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v64.0 STABLE</div>
         `;
+    },
+
+    renderPrivacySettings: async () => {
+        const container = document.getElementById('settings-dynamic-area');
+        if(!container) return;
+
+        const snap = await db.ref('users/' + State.user.uid + '/privacy').once('value');
+        const privacy = snap.val() || {};
+        const allowDMs = privacy.allowDMs !== false; 
+        const allowCalls = privacy.allowCalls !== false; 
+
+        container.innerHTML = `
+            <div class="set-header-nav"><button class="btn-text" onclick="Settings.renderMainMenu()"><i class="fas fa-arrow-left"></i> BACK</button><h3>PRIVACY & SECURITY</h3></div>
+            <div class="scroll-area-set">
+                
+                <div class="set-group-title">INTERACTIONS</div>
+                <div class="control-row">
+                    <span>Allow Private Messages (DMs)</span>
+                    <label class="toggle-wrapper" style="margin:0;">
+                        <input type="checkbox" class="toggle-checkbox" id="priv-dm-toggle" ${allowDMs ? 'checked' : ''} onchange="Settings.savePrivacy()">
+                        <div class="toggle-switch"></div>
+                    </label>
+                </div>
+                <div class="control-row">
+                    <span>Allow Incoming Calls</span>
+                    <label class="toggle-wrapper" style="margin:0;">
+                        <input type="checkbox" class="toggle-checkbox" id="priv-call-toggle" ${allowCalls ? 'checked' : ''} onchange="Settings.savePrivacy()">
+                        <div class="toggle-switch"></div>
+                    </label>
+                </div>
+
+                <div class="set-group-title" style="margin-top:30px;">BLACKLIST (BLOCKED USERS)</div>
+                <div id="blacklist-container" class="list-container" style="min-height: 100px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <div style="text-align:center; padding:20px; color:#666;">Loading blocklist...</div>
+                </div>
+            </div>
+        `;
+
+        Settings.renderBlacklist();
+    },
+
+    renderBlacklist: async () => {
+        const list = document.getElementById('blacklist-container');
+        if(!list) return;
+
+        const snap = await db.ref('users/' + State.user.uid + '/blocked').once('value');
+        const blockedObj = snap.val();
+
+        if(!blockedObj) {
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">No blocked users.</div>';
+            return;
+        }
+
+        list.innerHTML = '';
+        const blockedUids = Object.keys(blockedObj);
+
+        for (const uid of blockedUids) {
+            const userSnap = await db.ref('users/' + uid).once('value');
+            const u = userSnap.val();
+            const name = u ? u.displayName : 'Unknown User';
+            const avi = u ? u.avatar : 'https://via.placeholder.com/50';
+
+            const row = document.createElement('div');
+            row.className = 'control-row';
+            row.style.padding = '10px 15px';
+            row.style.marginBottom = '5px';
+            
+            row.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${avi}" style="width:30px; height:30px; border-radius:50%;">
+                    <span>${name}</span>
+                </div>
+                <button class="btn-text" style="color:#ff0055; border-color:#ff0055;" onclick="Settings.unblockUser('${uid}')">UNBLOCK</button>
+            `;
+            list.appendChild(row);
+        }
+    },
+
+    unblockUser: (uid) => {
+        Block.remove(uid);
+        setTimeout(() => Settings.renderBlacklist(), 200);
+    },
+
+    savePrivacy: () => {
+        const allowDMs = document.getElementById('priv-dm-toggle').checked;
+        const allowCalls = document.getElementById('priv-call-toggle').checked;
+
+        db.ref('users/' + State.user.uid + '/privacy').update({
+            allowDMs: allowDMs,
+            allowCalls: allowCalls
+        }).then(() => UI.toast("Privacy Settings Saved", "msg"));
     },
 
     renderVoiceSettings: async () => {
@@ -152,12 +242,10 @@ window.Settings = {
              </div>
         `;
 
-        // Получаем девайсы через Voice модуль (Agora)
         const devices = await Voice.getDevices();
         const mics = devices.mics || [];
         const speakers = devices.speakers || [];
         
-        // Рендер
         const box = document.getElementById('voice-settings-box');
         
         let micOptions = mics.map(m => `<option value="${m.deviceId}" ${Voice.currentMicId === m.deviceId ? 'selected' : ''}>${m.label || 'Unknown Microphone'}</option>`).join('');
@@ -175,12 +263,29 @@ window.Settings = {
                 <span>Input Gain (Volume)</span>
                 <input type="range" min="0" max="200" value="${Voice.localVolume}" oninput="Voice.setLocalVolume(this.value)">
             </div>
+
+            <div class="control-row">
+                <span>Push to Talk Mode</span>
+                <label class="toggle-wrapper" style="margin:0;">
+                    <input type="checkbox" class="toggle-checkbox" id="set-ptt-toggle" ${Voice.pttEnabled ? 'checked' : ''} onchange="Voice.setPushToTalk(this.checked)">
+                    <div class="toggle-switch"></div>
+                </label>
+            </div>
+
+            <div class="control-row" style="margin-top:5px;">
+                <span>PTT Key Binding</span>
+                <button class="btn-text" style="font-family:monospace; min-width:80px;" onclick="Voice.bindPttKey(this)">${Voice.formatKeyName(Voice.pttKey)}</button>
+            </div>
             
             <div class="set-group-title" style="margin-top:30px;">OUTPUT DEVICE (SPEAKERS)</div>
             <select id="set-spk-select" class="neko-select" onchange="Voice.setSpeakerDevice(this.value)">
                 ${spkOptions}
             </select>
-            <div class="sm-desc" style="margin-top:5px;">Note: Speaker selection is limited by browser permissions.</div>
+            
+            <div class="control-row" style="margin-top:10px;">
+                <span>Master Output Volume</span>
+                <input type="range" min="0" max="100" value="${Voice.masterVolume}" oninput="Voice.setMasterVolume(this.value)">
+            </div>
 
             <div class="set-group-title" style="margin-top:30px;">MIC TEST</div>
             <div style="background:#000; padding:15px; border-radius:12px; border:1px solid #333; display:flex; align-items:center; gap:15px;">
@@ -194,7 +299,7 @@ window.Settings = {
 
     renderProfileEditor: () => {
         const container = document.getElementById('settings-dynamic-area');
-        const profile = State.profile || {}; // Используем данные из БД
+        const profile = State.profile || {};
 
         let roleName = 'USER';
         let roleColor = '#666';
@@ -348,12 +453,10 @@ window.Settings = {
     },
 
     saveTheme: () => {
-        // Save to LocalStorage (Instant Load)
         localStorage.setItem('neko_theme_config', JSON.stringify(Settings.config));
         
         Settings.applyTheme(Settings.config);
         
-        // Sync with Cloud
         db.ref('users/'+State.user.uid+'/themeConfig').set(Settings.config).then(() => {
             UI.toast("THEME SAVED", "success");
         });
