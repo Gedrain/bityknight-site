@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v61</title>
+    <title>NekoCore v63</title>
     
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
 
@@ -207,6 +207,34 @@
         </div>
     </div>
 
+    <div id="modal-create" class="modal-overlay">
+        <div class="modal-box">
+            <h3>NEW CHANNEL</h3>
+            <div class="ch-preview-box">
+                <div id="new-ch-banner-prev" class="ch-preview-banner"></div>
+                <img id="new-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+">
+            </div>
+            <div class="file-grid">
+                <label class="file-zone" for="new-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label>
+                <label class="file-zone" for="new-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label>
+            </div>
+            <input type="file" id="new-ch-avi" hidden accept="image/*">
+            <input type="file" id="new-ch-banner" hidden accept="image/*">
+            <input type="text" id="new-ch-name" placeholder="Name">
+            
+            <label class="toggle-wrapper">
+                <input type="checkbox" id="new-ch-priv" class="toggle-checkbox" onchange="document.getElementById('new-ch-pass').classList.toggle('hidden', !this.checked)">
+                <div class="toggle-switch"></div>
+                <div class="toggle-label">Private Channel</div>
+            </label>
+            <input type="password" id="new-ch-pass" class="hidden" placeholder="Password">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-solid" onclick="Channels.create()">CREATE</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-create').classList.remove('open')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-create-voice" class="modal-overlay">
         <div class="modal-box">
             <h3>CREATE VOICE ROOM</h3>
@@ -279,7 +307,7 @@
     </div>
 
     <div id="modal-cropper" class="modal-overlay"><div class="modal-box"><div class="crop-area"><img id="crop-img" style="display:block; max-width:100%;"></div><div class="crop-controls"><button class="btn-danger" onclick="UI.Crop.cancel()">CANCEL</button><button class="btn-solid" onclick="UI.Crop.finish()">APPLY</button></div></div></div>
-    <div id="modal-create" class="modal-overlay"><div class="modal-box"><h3>NEW CHANNEL</h3><div class="ch-preview-box"><div id="new-ch-banner-prev" class="ch-preview-banner"></div><img id="new-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+"></div><div class="file-grid"><label class="file-zone" for="new-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label><label class="file-zone" for="new-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label></div><input type="file" id="new-ch-avi" hidden accept="image/*"><input type="file" id="new-ch-banner" hidden accept="image/*"><input type="text" id="new-ch-name" placeholder="Name"><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.create()">CREATE</button><button class="btn-danger" onclick="document.getElementById('modal-create').classList.remove('open')">CANCEL</button></div></div></div>
+    
     <div id="modal-channel-settings" class="modal-overlay"><div class="modal-box"><h3>CHANNEL SETTINGS</h3><div class="ch-preview-box"><div id="edit-ch-banner-prev" class="ch-preview-banner"></div><img id="edit-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+"></div><div class="file-grid"><label class="file-zone" for="edit-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label><label class="file-zone" for="edit-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label></div><input type="file" id="edit-ch-avi" hidden accept="image/*"><input type="file" id="edit-ch-banner" hidden accept="image/*"><input type="text" id="edit-ch-name" placeholder="Channel Name"><div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.saveSettings()">SAVE</button><button class="btn-danger" style="background:rgba(255,153,0,0.1); border-color:#ff9900; color:#ff9900;" onclick="Channels.leaveFromSettings()">LEAVE CHANNEL</button><button class="btn-danger" onclick="Channels.del()">DELETE CHANNEL</button><button class="btn-text" onclick="document.getElementById('modal-channel-settings').classList.remove('open')">CANCEL</button></div></div></div>
     <div id="modal-edit" class="modal-overlay"><div class="modal-box"><h3>EDIT</h3><textarea id="edit-text" rows="3"></textarea><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Chat.confirmEdit()">SAVE</button><button class="btn-danger" onclick="document.getElementById('modal-edit').classList.remove('open')">X</button></div></div></div>
     <div id="modal-img" class="modal-overlay" onclick="this.classList.remove('open')"><img id="full-img" style="max-width:95%; max-height:90%; border-radius:12px; border:2px solid #d600ff;"></div>
@@ -300,7 +328,6 @@
     <script src="functions/voice.js"></script>
     <script src="functions/main.js"></script>
     <script>
-        document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);
         if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
     </script>
 </body>

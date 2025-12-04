@@ -15,16 +15,58 @@ window.Channels = {
     },
 
     create: () => {
-        const n = document.getElementById('new-ch-name').value; const isPriv = document.getElementById('new-ch-priv').checked; const pass = isPriv ? document.getElementById('new-ch-pass').value : null;
+        const nameInput = document.getElementById('new-ch-name');
+        const n = nameInput ? nameInput.value : '';
+        
+        // --- ЗАЩИТА ОТ ОШИБКИ NULL ---
+        const privEl = document.getElementById('new-ch-priv');
+        const passEl = document.getElementById('new-ch-pass');
+        
+        const isPriv = privEl ? privEl.checked : false; 
+        const pass = (isPriv && passEl) ? passEl.value : null;
+        // -------------------------------
+
         if(!n) return UI.toast("Name required", "error");
-        const data = { name: n, pass: pass, creator: State.user.uid, image: Channels.croppedData.newAvi || null, banner: Channels.croppedData.newBan || null, membersCount: 1 };
-        const newRef = db.ref('channels').push(); newRef.set(data).then(() => Channels.join(newRef.key, true));
-        document.getElementById('modal-create').classList.remove('open'); document.getElementById('new-ch-name').value = ''; Channels.croppedData.newAvi = null; Channels.croppedData.newBan = null;
+        
+        const data = { 
+            name: n, 
+            pass: pass, 
+            creator: State.user.uid, 
+            image: Channels.croppedData.newAvi || null, 
+            banner: Channels.croppedData.newBan || null, 
+            membersCount: 1 
+        };
+        
+        const newRef = db.ref('channels').push(); 
+        
+        newRef.set(data)
+            .then(() => {
+                return Channels.join(newRef.key, true);
+            })
+            .then(() => {
+                document.getElementById('modal-create').classList.remove('open'); 
+                if(nameInput) nameInput.value = ''; 
+                document.getElementById('new-ch-avi-prev').src = 'https://via.placeholder.com/100/000000/ffffff?text=+';
+                document.getElementById('new-ch-banner-prev').style.backgroundImage = '';
+                Channels.croppedData.newAvi = null; 
+                Channels.croppedData.newBan = null;
+                UI.toast("Channel created!", "success");
+            })
+            .catch(error => {
+                console.error(error);
+                UI.toast("Creation failed: " + error.message, "error");
+            });
     },
 
     join: (chid, isCreator = false) => {
         const uid = State.user.uid; const updates = {}; updates[`users_channels/${uid}/${chid}`] = true; updates[`channels_members/${chid}/${uid}`] = true;
-        db.ref().update(updates).then(() => { if(!isCreator) { db.ref(`channels/${chid}/membersCount`).transaction(c => (c || 0) + 1); UI.toast("Joined Channel", "success"); } Channels.openChat(chid); });
+        return db.ref().update(updates).then(() => { 
+            if(!isCreator) { 
+                db.ref(`channels/${chid}/membersCount`).transaction(c => (c || 0) + 1); 
+                UI.toast("Joined Channel", "success"); 
+            } 
+            Channels.openChat(chid); 
+        });
     },
 
     leave: (chid) => {
@@ -41,7 +83,6 @@ window.Channels = {
             const v = s.val(); if(!v) return;
             const titleEl = document.getElementById('chat-title');
             titleEl.innerText = '# ' + v.name;
-            // ОЧИЩАЕМ КЛИКАБЕЛЬНОСТЬ, чтобы в каналах заголовок был обычным
             titleEl.classList.remove('clickable-header');
             titleEl.onclick = null; 
 
