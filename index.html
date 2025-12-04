@@ -4,21 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#05000a">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v53</title>
+    <title>NekoCore v57</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/style2.css">
-    
     <style id="theme-style"></style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -30,7 +28,6 @@
 <body>
     <div id="toast-container"></div>
     <div id="bg-canvas"></div> 
-
     <div id="loader">
         <div id="boot-log" class="terminal-container"></div>
         <div id="glitch-logo" class="glitch-logo-container">
@@ -40,68 +37,33 @@
 
     <script>
         const BootLoader = {
-            logs: [
-                "[ OK ] Started Show Plymouth Boot Screen.",
-                "[ OK ] Reached target Paths.",
-                "[ OK ] Reached target Basic System.",
-                "[ ERRO ] Failed to start Network Name Resolution.",
-                "[ ERRO ] Kernel Panic - not syncing: VFS: Unable to mount root fs",
-                "[ WARN ] CPU0: Temperature above threshold",
-                "Loading kernel modules...",
-                "Applying power management settings...",
-                "[ FAIL ] Failed to load module: nvidia_drm",
-                "Segmentation fault (core dumped)",
-                "CORRUPTION DETECTED AT ADDRESS 0x0000F",
-                "INITIALIZING NEKO PROTOCOL...",
-                "BYPASSING SECURITY LAYER...",
-                "ACCESS GRANTED."
-            ],
-            
+            logs: ["[ OK ] System Boot.", "Loading Modules...", "Connecting to NekoNet...", "Access Granted."],
             run: () => {
                 const term = document.getElementById('boot-log');
                 const logo = document.getElementById('glitch-logo');
                 const text = logo.querySelector('.glitch-text');
                 let i = 0;
-
-                // 1. Печатаем логи (быстро)
                 const interval = setInterval(() => {
                     if (i >= BootLoader.logs.length) {
                         clearInterval(interval);
-                        // 2. Очищаем экран и показываем лого
                         setTimeout(() => {
                             term.style.display = 'none';
                             logo.style.opacity = '1';
-                            
-                            // 3. Ждем и делаем ГЛИТЧ исчезновение
                             setTimeout(() => {
                                 text.classList.add('glitch-out');
-                                // 4. Полностью убираем лоадер
-                                setTimeout(() => {
-                                    document.getElementById('loader').classList.add('hidden');
-                                }, 400); // Время совпадает с glitch-fade-out
-                            }, 1500); // Сколько висит логотип (1.5 сек)
+                                setTimeout(() => { document.getElementById('loader').classList.add('hidden'); }, 400);
+                            }, 1000);
                         }, 200);
                         return;
                     }
-
                     const p = document.createElement('p');
                     p.className = 'log-line';
-                    const txt = BootLoader.logs[i];
-                    
-                    if (txt.includes('[ ERRO ]') || txt.includes('[ FAIL ]') || txt.includes('fault') || txt.includes('CORRUPTION')) {
-                        p.classList.add('log-err');
-                    } else if (txt.includes('[ WARN ]')) {
-                        p.classList.add('log-warn');
-                    }
-                    
-                    p.innerText = txt;
+                    p.innerText = BootLoader.logs[i];
                     term.appendChild(p);
                     i++;
-                }, 100); // Скорость строк (100мс)
+                }, 100);
             }
         };
-        
-        // Запускаем анимацию сразу
         window.addEventListener('load', BootLoader.run);
     </script>
 
@@ -112,54 +74,32 @@
                     <div class="auth-logo-glitch" data-text="NEKO ID">NEKO ID</div>
                     <div class="auth-subtitle">SECURE ACCESS TERMINAL</div>
                 </div>
-
                 <div class="auth-switch-container">
                     <div class="auth-switch-bg"></div>
                     <div class="auth-switch-btn active" onclick="Auth.setMode(false)" id="tab-login">LOGIN</div>
                     <div class="auth-switch-btn" onclick="Auth.setMode(true)" id="tab-reg">JOIN</div>
                 </div>
-
                 <div class="auth-form-body">
-                    
                     <div class="input-group collapsed" id="group-nick">
                         <i class="fas fa-user-astronaut input-icon"></i>
-                        <input type="text" id="auth-nick" placeholder=" " autocomplete="off">
-                        <label for="auth-nick">CODENAME</label>
-                        <div class="input-line"></div>
+                        <input type="text" id="auth-nick" placeholder=" " autocomplete="off"><label>CODENAME</label><div class="input-line"></div>
                     </div>
-
                     <div class="input-group">
                         <i class="fas fa-at input-icon"></i>
-                        <input type="email" id="auth-email" placeholder=" " autocomplete="off">
-                        <label for="auth-email">EMAIL ADDRESS</label>
-                        <div class="input-line"></div>
+                        <input type="email" id="auth-email" placeholder=" " autocomplete="off"><label>EMAIL</label><div class="input-line"></div>
                     </div>
-
                     <div class="input-group">
                         <i class="fas fa-key input-icon"></i>
-                        <input type="password" id="auth-pass" placeholder=" ">
-                        <label for="auth-pass">PASSWORD</label>
-                        <i class="fas fa-eye input-reveal" onclick="Auth.togglePassVisibility(this)"></i>
-                        <div class="input-line"></div>
+                        <input type="password" id="auth-pass" placeholder=" "><label>PASSWORD</label><i class="fas fa-eye input-reveal" onclick="Auth.togglePassVisibility(this)"></i><div class="input-line"></div>
                     </div>
-
                 </div>
-
-                <button class="btn-cyber" onclick="Auth.submit()">
-                    <span class="btn-content">INITIALIZE_SESSION</span>
-                    <div class="btn-glitch-layers"></div>
-                    <div class="btn-scanline"></div>
-                </button>
-
-                <div class="auth-footer">
-                    <span onclick="Auth.reset()" class="link-hover">FORGOT_CREDENTIALS?</span>
-                </div>
+                <button class="btn-cyber" onclick="Auth.submit()"><span class="btn-content">INITIALIZE_SESSION</span><div class="btn-glitch-layers"></div><div class="btn-scanline"></div></button>
+                <div class="auth-footer"><span onclick="Auth.reset()" class="link-hover">FORGOT_CREDENTIALS?</span></div>
             </div>
         </div>
 
         <div id="view-main" class="hidden">
             <div id="sidebar-overlay" class="sidebar-overlay" onclick="UI.toggleMenu()"></div>
-
             <div id="sidebar" class="sidebar">
                 <div class="sidebar-header"><span class="accent-text">NEKO</span>CORE</div>
                 <div class="nav-group">
@@ -187,106 +127,84 @@
                         <div id="chat-top-right" style="width:60px; display:flex; justify-content:center; align-items:center;"></div>
                     </div>
                     <div id="chat-feed" class="messages-container"></div>
-                    <div class="chat-input-area"><label for="file-in" style="cursor:pointer; color:#888;"><i class="fas fa-paperclip"></i></label><input type="file" id="file-in" hidden multiple accept="image/*"><input type="text" id="msg-in" placeholder="Message..."><button class="btn-solid" style="width:50px;" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button></div>
+                    
+                    <div class="chat-input-area">
+                        <div id="media-preview" class="media-preview hidden">
+                            <img id="preview-img-el">
+                            <i class="fas fa-times" onclick="Chat.clearPreview()"></i>
+                        </div>
+
+                        <div id="chat-input-controls">
+                            <div id="input-controls">
+                                <label for="file-in" style="cursor:pointer; color:#888; font-size:1.2rem; margin-right:10px;"><i class="fas fa-paperclip"></i></label>
+                                <input type="file" id="file-in" hidden accept="image/*">
+                                <input type="text" id="msg-in" placeholder="Message..." autocomplete="off">
+                                
+                                <button id="btn-mic" onclick="Chat.startRec()"><i class="fas fa-microphone"></i></button>
+                                <button id="btn-send" class="hidden" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+
+                        <div id="recording-ui" class="hidden">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="pulsing-dot"></div>
+                                <span id="rec-time">0:00</span>
+                            </div>
+                            <div class="rec-controls">
+                                <i class="fas fa-times" onclick="Chat.cancelRec()"></i>
+                                <i class="fas fa-paper-plane" onclick="Chat.finishRec()"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="tab-dms" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">MESSAGES</div><div></div></div><div id="dm-list" class="list-container"></div></div>
                 <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
-
-                <div id="tab-settings" class="tab-pane">
-                    <div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SYSTEM CONFIG</div><div></div></div>
-                    <div class="admin-scroll-area"> 
-                        <div class="p-20 flex-col">
-                            
-                            <div class="settings-nav">
-                                <button class="settings-nav-btn active" id="btn-set-identity" onclick="Settings.switchTab('identity')">IDENTITY</button>
-                                <button class="settings-nav-btn" id="btn-set-appearance" onclick="Settings.switchTab('appearance')">APPEARANCE</button>
-                            </div>
-
-                            <div id="set-sec-identity" class="settings-section flex-col" style="gap:20px;">
-                                
-                                <div style="background:var(--panel); border:1px solid rgba(255,255,255,0.1); border-radius:16px; overflow:hidden;" class="panel-box">
-                                    <div id="my-banner-prev" style="height:120px; background:#222; background-size:cover; background-position:center;"></div>
-                                    <div style="padding:0 20px 20px 20px; text-align:center; margin-top:-40px;">
-                                        <img id="my-avi" style="width:80px; height:80px; border-radius:50%; border:4px solid var(--panel); object-fit:cover; background:#000;" class="panel-border">
-                                        <div id="my-id-badge" style="color:#666; font-family:monospace; margin-top:5px;">ID: ???</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="file-grid">
-                                    <label class="file-zone" for="avi-in"><i class="fas fa-user"></i><span>Avatar</span></label>
-                                    <label class="file-zone" for="banner-in"><i class="fas fa-image"></i><span>Banner</span></label>
-                                </div>
-                                <input type="file" id="avi-in" hidden accept="image/*">
-                                <input type="file" id="banner-in" hidden accept="image/*">
-
-                                <div>
-                                    <div class="set-group-title">Public Data</div>
-                                    <input type="text" id="my-nick" placeholder="Codename">
-                                    <textarea id="my-bio" rows="3" placeholder="Bio..."></textarea>
-                                </div>
-
-                                <div>
-                                    <div class="set-group-title">Tags</div>
-                                    <div style="display:flex; gap:10px;">
-                                        <input type="text" id="set-prefix" placeholder="Prefix (e.g. KING)" maxlength="10" style="flex:1;">
-                                        <input type="color" id="set-prefix-color" value="#ffffff" style="width:50px; border-radius:8px;">
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <div id="set-sec-appearance" class="settings-section hidden flex-col" style="gap:20px;">
-                                
-                                <div>
-                                    <div class="set-group-title">Presets</div>
-                                    <div id="theme-presets" class="theme-grid">
-                                        </div>
-                                </div>
-
-                                <div>
-                                    <div class="set-group-title">Manual Override</div>
-                                    <div class="color-picker-row">
-                                        <span>Accent Color</span>
-                                        <input type="color" id="set-accent" oninput="Settings.previewTheme()">
-                                    </div>
-                                    <div class="color-picker-row">
-                                        <span>Background</span>
-                                        <input type="color" id="set-bg" oninput="Settings.previewTheme()">
-                                    </div>
-                                    <div class="color-picker-row">
-                                        <span>Panels / Cards</span>
-                                        <input type="color" id="set-panel" oninput="Settings.previewTheme()">
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <button class="btn-solid" onclick="Settings.save()" style="margin-top:20px; padding:15px; font-size:1.1rem;">APPLY CHANGES</button>
-
-                        </div>
-                    </div>
-                </div>
+                <div id="tab-settings" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SYSTEM CONFIG</div><div></div></div><div class="admin-scroll-area"><div id="settings-dynamic-area" class="p-20 flex-col"></div></div></div>
                 <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
             </div>
         </div>
     </div>
 
-    <div id="modal-members" class="modal-overlay">
-        <div class="modal-box" style="height: 80vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
-            <div class="neko-card-header" style="padding:15px; border-bottom:1px solid #333;"><span>CHANNEL MEMBERS</span><i class="fas fa-users" style="color:var(--primary)"></i></div>
-            <div id="members-list" class="list-container" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;"></div>
-            <div style="padding:15px; border-top:1px solid #333; background:#09090b;"><button class="btn-text" onclick="document.getElementById('modal-members').classList.remove('open')">CLOSE</button></div>
+    <div id="modal-color-picker" class="modal-overlay">
+        <div class="modal-box" style="width: 350px; max-width: 95%;">
+            <h3>SELECT COLOR</h3>
+            <div class="picker-container">
+                <div class="picker-preview" id="picker-preview-box"></div>
+                <div class="picker-spectrum" id="picker-spectrum" onclick="Settings.pickSpectrum(event)"></div>
+                <div class="picker-controls"><span>HEX:</span><input type="text" id="picker-hex-in" value="#ffffff" oninput="Settings.updateFromHex(this.value)"></div>
+                <div class="picker-presets" id="picker-presets"></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-solid" onclick="Settings.confirmColor()">APPLY</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-color-picker').classList.remove('open')">CANCEL</button>
+            </div>
         </div>
     </div>
 
+    <div id="modal-pass" class="modal-overlay">
+        <div class="modal-box security-box">
+            <div class="security-header"><i class="fas fa-lock"></i><span>SECURE CHANNEL</span></div>
+            <div class="security-body">
+                <p>ENCRYPTED SIGNAL DETECTED</p>
+                <div class="input-group"><i class="fas fa-key input-icon"></i><input type="password" id="ch-auth-pass" placeholder="ENTER ACCESS CODE"><div class="input-line"></div></div>
+            </div>
+            <div class="security-footer">
+                <button class="btn-solid" onclick="Channels.auth()">DECRYPT & ENTER</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-pass').classList.remove('open')">ABORT</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-members" class="modal-overlay"><div class="modal-box" style="height: 80vh; display:flex; flex-direction:column; padding:0; overflow:hidden;"><div class="neko-card-header" style="padding:15px; border-bottom:1px solid #333;"><span>CHANNEL MEMBERS</span><i class="fas fa-users" style="color:var(--primary)"></i></div><div id="members-list" class="list-container" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;"></div><div style="padding:15px; border-top:1px solid #333; background:#09090b;"><button class="btn-text" onclick="document.getElementById('modal-members').classList.remove('open')">CLOSE</button></div></div></div>
+    
     <div id="modal-user" class="modal-overlay">
         <div class="modal-content profile-card-modal">
             <div class="neko-card-header"><span>NEKOID ACCESS CARD</span><i class="fas fa-microchip"></i></div>
             <div id="u-banner" class="p-banner"></div>
             <div class="p-content-grid">
                 <div class="p-left-col"><div class="p-avi-wrapper"><img id="u-avi" class="p-avi"><div id="u-status-indicator" class="p-status-dot"></div></div><div id="u-id" class="p-id-chip">ID: ???</div></div>
-                <div class="p-right-col"><div class="p-main-info"><div id="u-name" class="p-name">Username</div><div id="u-prefix-container"></div></div><div class="p-stats-grid"><div class="p-stat-row"><span class="p-label">ROLE</span><span id="u-role" class="p-value role-badge">USER</span></div><div class="p-stat-row"><span class="p-label">JOINED</span><span id="u-reg-date" class="p-value">Unknown</span></div><div class="p-stat-row"><span class="p-label">SEEN</span><span id="u-last-seen" class="p-value">Now</span></div></div></div>
+                <div class="p-right-col"><div class="p-main-info"><div id="u-name" class="p-name">Username</div><div id="u-prefix-container"></div></div><div id="u-bio" class="p-bio"></div><div class="p-stats-grid"><div class="p-stat-row"><span class="p-label">ROLE</span><span id="u-role" class="p-value role-badge">USER</span></div><div class="p-stat-row"><span class="p-label">JOINED</span><span id="u-reg-date" class="p-value">Unknown</span></div><div class="p-stat-row"><span class="p-label">SEEN</span><span id="u-last-seen" class="p-value">Now</span></div></div></div>
             </div>
             <div class="p-badges-section"><div class="p-label-small">ACHIEVEMENTS</div><div id="u-badges" class="p-badges-list"></div></div>
             <div class="p-footer-actions">
@@ -297,33 +215,8 @@
     </div>
 
     <div id="modal-cropper" class="modal-overlay"><div class="modal-box"><div class="crop-area"><img id="crop-img" style="display:block; max-width:100%;"></div><div class="crop-controls"><button class="btn-danger" onclick="UI.Crop.cancel()">CANCEL</button><button class="btn-solid" onclick="UI.Crop.finish()">APPLY</button></div></div></div>
-
-    <div id="modal-create" class="modal-overlay">
-        <div class="modal-box">
-            <h3>NEW CHANNEL</h3>
-            <div class="ch-preview-box"><div id="new-ch-banner-prev" class="ch-preview-banner"></div><img id="new-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+"></div>
-            <div class="file-grid"><label class="file-zone" for="new-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label><label class="file-zone" for="new-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label></div>
-            <input type="file" id="new-ch-avi" hidden accept="image/*"><input type="file" id="new-ch-banner" hidden accept="image/*"><input type="text" id="new-ch-name" placeholder="Name"><label class="toggle-wrapper"><input type="checkbox" id="new-ch-priv" class="toggle-checkbox"><div class="toggle-switch"></div><div class="toggle-label">Private Channel</div></label><input type="password" id="new-ch-pass" class="hidden" placeholder="Password">
-            <div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.create()">CREATE</button><button class="btn-danger" onclick="document.getElementById('modal-create').classList.remove('open')">CANCEL</button></div>
-        </div>
-    </div>
-
-    <div id="modal-channel-settings" class="modal-overlay">
-        <div class="modal-box">
-            <h3>CHANNEL SETTINGS</h3>
-            <div class="ch-preview-box"><div id="edit-ch-banner-prev" class="ch-preview-banner"></div><img id="edit-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+"></div>
-            <div class="file-grid"><label class="file-zone" for="edit-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label><label class="file-zone" for="edit-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label></div>
-            <input type="file" id="edit-ch-avi" hidden accept="image/*"><input type="file" id="edit-ch-banner" hidden accept="image/*"><input type="text" id="edit-ch-name" placeholder="Channel Name">
-            <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
-                <button class="btn-solid" onclick="Channels.saveSettings()">SAVE</button>
-                <button class="btn-danger" style="background:rgba(255,153,0,0.1); border-color:#ff9900; color:#ff9900;" onclick="Channels.leaveFromSettings()">LEAVE CHANNEL</button>
-                <button class="btn-danger" onclick="Channels.del()">DELETE CHANNEL</button>
-                <button class="btn-text" onclick="document.getElementById('modal-channel-settings').classList.remove('open')">CANCEL</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-pass" class="modal-overlay"><div class="modal-box"><h3>ACCESS</h3><input type="password" id="ch-auth-pass"><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.auth()">ENTER</button><button class="btn-danger" onclick="document.getElementById('modal-pass').classList.remove('open')">X</button></div></div></div>
+    <div id="modal-create" class="modal-overlay"><div class="modal-box"><h3>NEW CHANNEL</h3><div class="ch-preview-box"><div id="new-ch-banner-prev" class="ch-preview-banner"></div><img id="new-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+"></div><div class="file-grid"><label class="file-zone" for="new-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label><label class="file-zone" for="new-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label></div><input type="file" id="new-ch-avi" hidden accept="image/*"><input type="file" id="new-ch-banner" hidden accept="image/*"><input type="text" id="new-ch-name" placeholder="Name"><label class="toggle-wrapper"><input type="checkbox" id="new-ch-priv" class="toggle-checkbox"><div class="toggle-switch"></div><div class="toggle-label">Private Channel</div></label><input type="password" id="new-ch-pass" class="hidden" placeholder="Password"><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.create()">CREATE</button><button class="btn-danger" onclick="document.getElementById('modal-create').classList.remove('open')">CANCEL</button></div></div></div>
+    <div id="modal-channel-settings" class="modal-overlay"><div class="modal-box"><h3>CHANNEL SETTINGS</h3><div class="ch-preview-box"><div id="edit-ch-banner-prev" class="ch-preview-banner"></div><img id="edit-ch-avi-prev" class="ch-preview-avi" src="https://via.placeholder.com/100/000000/ffffff?text=+"></div><div class="file-grid"><label class="file-zone" for="edit-ch-avi"><i class="fas fa-icons"></i><span>Icon</span></label><label class="file-zone" for="edit-ch-banner"><i class="fas fa-panorama"></i><span>Banner</span></label></div><input type="file" id="edit-ch-avi" hidden accept="image/*"><input type="file" id="edit-ch-banner" hidden accept="image/*"><input type="text" id="edit-ch-name" placeholder="Channel Name"><div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Channels.saveSettings()">SAVE</button><button class="btn-danger" style="background:rgba(255,153,0,0.1); border-color:#ff9900; color:#ff9900;" onclick="Channels.leaveFromSettings()">LEAVE CHANNEL</button><button class="btn-danger" onclick="Channels.del()">DELETE CHANNEL</button><button class="btn-text" onclick="document.getElementById('modal-channel-settings').classList.remove('open')">CANCEL</button></div></div></div>
     <div id="modal-edit" class="modal-overlay"><div class="modal-box"><h3>EDIT</h3><textarea id="edit-text" rows="3"></textarea><div style="display:flex; gap:10px; margin-top:20px;"><button class="btn-solid" onclick="Chat.confirmEdit()">SAVE</button><button class="btn-danger" onclick="document.getElementById('modal-edit').classList.remove('open')">X</button></div></div></div>
     <div id="modal-img" class="modal-overlay" onclick="this.classList.remove('open')"><img id="full-img" style="max-width:95%; max-height:90%; border-radius:12px; border:2px solid #d600ff;"></div>
     <div id="custom-alert" class="modal-overlay"><div class="modal-box"><h3 id="alert-title"></h3><p id="alert-text" style="color:#aaa;"></p><button class="btn-solid" style="margin-top:20px;" onclick="document.getElementById('custom-alert').classList.remove('open')">OK</button></div></div>
@@ -343,29 +236,7 @@
     <script src="functions/main.js"></script>
     <script>
         document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);
-        
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                let refreshing;
-                
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (refreshing) return;
-                    refreshing = true;
-                    window.location.reload(); 
-                });
-
-                navigator.serviceWorker.register('./sw.js').then(reg => {
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('New update available.');
-                            }
-                        });
-                    });
-                }).catch(err => console.log('SW Error', err));
-            });
-        }
+        if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
     </script>
 </body>
 </html>

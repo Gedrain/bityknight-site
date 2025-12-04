@@ -9,7 +9,7 @@ function resizeImage(file, callback) {
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const maxDim = 800;
+            const maxDim = 1024; // Чуть увеличили качество
             let w = img.width; let h = img.height;
             if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } } 
             else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
@@ -20,6 +20,16 @@ function resizeImage(file, callback) {
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+// Конвертация Blob (аудио) в Base64
+function blobToBase64(blob, callback) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const dataUrl = reader.result;
+        callback(dataUrl);
+    };
+    reader.readAsDataURL(blob);
 }
 
 // --- NOTIFICATIONS SYSTEM ---

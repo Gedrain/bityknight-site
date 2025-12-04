@@ -1,5 +1,5 @@
-const CACHE_NAME = 'neko-core-v53'; // Измените версию здесь для принудительного обновления у всех
-const DYNAMIC_CACHE = 'neko-dynamic-v53';
+const CACHE_NAME = 'neko-core-v57'; // ВЕРСИЯ ОБНОВЛЕНА: v53 -> v57
+const DYNAMIC_CACHE = 'neko-dynamic-v57';
 
 const ASSETS = [
     './',
@@ -25,6 +25,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
+                    // Удаляем все кэши, которые не совпадают с новыми версиями
                     if (key !== CACHE_NAME && key !== DYNAMIC_CACHE) {
                         return caches.delete(key);
                     }
