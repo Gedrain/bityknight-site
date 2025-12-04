@@ -1,13 +1,19 @@
+// --- КОНФИГУРАЦИЯ AGORA ---
+const AGORA_APP_ID = "96d3cebedfb044aa846e83d2bb818409"; // ID из твоего примера
+// ---------------------------
+
 window.Voice = {
-    localStream: null,
-    connections: {}, 
+    client: null,
+    localAudioTrack: null,
+    remoteUsers: {},
     currentChannel: null,
-    isMuted: false, 
+    isMuted: false,
     isDeafened: false,
     croppedBanner: null,
-    listListener: null, // Храним ссылку на слушатель обновлений
+    listListener: null,
 
     init: () => {
+        // Настройка загрузки баннера
         const banIn = document.getElementById('new-v-banner');
         if(banIn) {
             banIn.onchange = e => {
@@ -20,10 +26,40 @@ window.Voice = {
                 });
             };
         }
-        // Первый запуск загрузки
+        
+        // Инициализация Agora Client
+        if(window.AgoraRTC) {
+            Voice.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+            Voice.setupAgoraListeners();
+        } else {
+            console.error("Agora SDK not loaded!");
+        }
+
         Voice.load();
     },
 
+    setupAgoraListeners: () => {
+        // Когда удаленный пользователь публикует поток (включает микрофон)
+        Voice.client.on("user-published", async (user, mediaType) => {
+            await Voice.client.subscribe(user, mediaType);
+            
+            if (mediaType === "audio") {
+                const remoteAudioTrack = user.audioTrack;
+                // Если у нас не включен "Deafen" (звук выкл), играем
+                if(!Voice.isDeafened) {
+                    remoteAudioTrack.play();
+                }
+                Voice.remoteUsers[user.uid] = user;
+            }
+        });
+
+        // Когда пользователь уходит
+        Voice.client.on("user-unpublished", (user) => {
+            delete Voice.remoteUsers[user.uid];
+        });
+    },
+
+    // --- УПРАВЛЕНИЕ КОМНАТАМИ ---
     create: () => {
         const n = document.getElementById('new-v-name').value;
         const isPriv = document.getElementById('new-v-priv').checked;
@@ -50,7 +86,7 @@ window.Voice = {
     },
 
     delete: (key) => {
-        UI.confirm("DELETE ROOM", "Are you sure you want to delete this voice room?", () => {
+        UI.confirm("DELETE ROOM", "Are you sure?", () => {
             db.ref('voice_channels/' + key).remove().then(() => {
                 UI.toast("Room deleted", "success");
                 if(Voice.currentChannel === key) Voice.leave();
@@ -62,16 +98,12 @@ window.Voice = {
         const l = document.getElementById('voice-list');
         if(!l) return;
         
-        // Отключаем старый слушатель, чтобы не было дублей и глюков
-        if (Voice.listListener) {
-            db.ref('voice_channels').off('value', Voice.listListener);
-        }
+        if (Voice.listListener) db.ref('voice_channels').off('value', Voice.listListener);
         
-        // Включаем новый слушатель
         Voice.listListener = db.ref('voice_channels').on('value', s => {
             l.innerHTML = '';
             const val = s.val();
-            if(!val) { l.innerHTML = '<div style="text-align:center; padding:20px; color:#555;">No active voice channels.<br>Create one to start.</div>'; return; }
+            if(!val) { l.innerHTML = '<div style="text-align:center; padding:20px; color:#555;">No active voice channels.</div>'; return; }
             
             Object.keys(val).forEach(key => {
                 const v = val[key];
@@ -118,7 +150,6 @@ window.Voice = {
                     ${usersHtml}
                     ${controlsHtml}
                 `;
-                
                 div.onclick = () => Voice.attemptJoin(key, v);
                 l.appendChild(div);
             });
@@ -136,26 +167,23 @@ window.Voice = {
                 list.innerHTML = '<div style="text-align:center; color:#555;">No active members</div>';
                 return;
             }
-
             const users = snap.val();
             Object.keys(users).forEach(uid => {
                 const u = users[uid];
-                const micStatus = u.isMuted ? '<i class="fas fa-microphone-slash" style="color:#ff0055; font-size:0.8rem;"></i>' : '<i class="fas fa-microphone" style="color:#00ff9d; font-size:0.8rem;"></i>';
-                
+                const micStatus = u.isMuted ? '<i class="fas fa-microphone-slash" style="color:#ff0055;"></i>' : '<i class="fas fa-microphone" style="color:#00ff9d;"></i>';
                 const card = document.createElement('div');
                 card.className = 'member-card';
                 card.innerHTML = `
                     <div class="member-avi-wrap"><img src="${u.avatar || 'https://via.placeholder.com/50'}" class="member-avi"></div>
-                    <div class="member-info">
-                        <div class="member-name">${u.name}</div>
-                        <div class="member-seen" style="display:flex; gap:10px; align-items:center;">Voice Connected ${micStatus}</div>
-                    </div>
+                    <div class="member-info"><div class="member-name">${u.name}</div><div class="member-seen">Voice Connected ${micStatus}</div></div>
                     <button class="btn-text" style="padding:5px 10px; border:1px solid #333;" onclick="window.Profile.view('${uid}')">PROFILE</button>
                 `;
                 list.appendChild(card);
             });
         });
     },
+
+    // --- ЛОГИКА ПОДКЛЮЧЕНИЯ (AGORA) ---
 
     attemptJoin: (key, data) => {
         if(Voice.currentChannel === key) return; 
@@ -180,13 +208,24 @@ window.Voice = {
         }
     },
 
-    join: async (key) => {
+    join: async (channelName) => {
         try {
-            Voice.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            // Используем часть UID как ID для Agora
+            const uid = State.user.uid; 
+
+            // 1. Вступаем в канал Agora (token = null для Testing Mode)
+            await Voice.client.join(AGORA_APP_ID, channelName, null, uid);
+
+            // 2. Создаем локальный аудио трек
+            Voice.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
             
-            Voice.currentChannel = key;
+            // 3. Публикуем его (отправляем на сервер)
+            await Voice.client.publish([Voice.localAudioTrack]);
+
+            // 4. Обновляем UI и БД
+            Voice.currentChannel = channelName;
             Voice.renderActiveBar(true);
-            UI.toast("Connected to Voice", "success");
+            UI.toast("Server Connection Established", "success");
 
             const myData = {
                 name: State.profile.displayName,
@@ -195,33 +234,46 @@ window.Voice = {
                 isMuted: false,
                 isDeaf: false
             };
-            await db.ref(`voice_channels/${key}/users/${State.user.uid}`).set(myData);
-            db.ref(`voice_channels/${key}/users/${State.user.uid}`).onDisconnect().remove(); 
+            
+            // Добавляем в БД
+            const ref = db.ref(`voice_channels/${channelName}/users/${State.user.uid}`);
+            await ref.set(myData);
+            ref.onDisconnect().remove(); 
+
         } catch (e) {
             console.error(e);
-            UI.toast("Microphone access denied", "error");
+            UI.toast("Voice Connection Failed: " + e.message, "error");
+            Voice.leave();
         }
     },
 
-    leave: () => {
+    leave: async () => {
         if(!Voice.currentChannel) return;
         
+        // Удаляем из БД
         db.ref(`voice_channels/${Voice.currentChannel}/users/${State.user.uid}`).remove();
         
-        if(Voice.localStream) {
-            Voice.localStream.getTracks().forEach(t => t.stop());
-            Voice.localStream = null;
+        // Закрываем треки
+        if(Voice.localAudioTrack) {
+            Voice.localAudioTrack.stop();
+            Voice.localAudioTrack.close();
+            Voice.localAudioTrack = null;
         }
+
+        // Выходим из Agora
+        await Voice.client.leave();
 
         Voice.currentChannel = null;
         Voice.renderActiveBar(false);
         UI.toast("Disconnected", "msg");
     },
 
-    toggleMute: () => {
-        if(!Voice.localStream) return;
+    toggleMute: async () => {
+        if(!Voice.localAudioTrack) return;
+        
         Voice.isMuted = !Voice.isMuted;
-        Voice.localStream.getAudioTracks().forEach(t => t.enabled = !Voice.isMuted);
+        // Agora метод
+        await Voice.localAudioTrack.setEnabled(!Voice.isMuted);
 
         const btn = document.getElementById('btn-v-mute');
         if(Voice.isMuted) {
@@ -231,11 +283,21 @@ window.Voice = {
             btn.classList.remove('active');
             btn.innerHTML = '<i class="fas fa-microphone"></i>';
         }
+
         if(Voice.currentChannel) db.ref(`voice_channels/${Voice.currentChannel}/users/${State.user.uid}`).update({isMuted: Voice.isMuted});
     },
 
     toggleDeafen: () => {
         Voice.isDeafened = !Voice.isDeafened;
+        
+        // Проходимся по всем удаленным юзерам и мьютим/размьючиваем их
+        Object.values(Voice.remoteUsers).forEach(user => {
+            if(user.audioTrack) {
+                if(Voice.isDeafened) user.audioTrack.stop();
+                else user.audioTrack.play();
+            }
+        });
+
         const btn = document.getElementById('btn-v-deaf');
         if(Voice.isDeafened) {
             btn.classList.add('active');
@@ -246,6 +308,7 @@ window.Voice = {
             btn.innerHTML = '<i class="fas fa-volume-up"></i>';
             UI.toast("Sound Enabled", "msg");
         }
+        
         if(Voice.currentChannel) db.ref(`voice_channels/${Voice.currentChannel}/users/${State.user.uid}`).update({isDeaf: Voice.isDeafened});
     },
 
