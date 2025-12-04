@@ -135,8 +135,60 @@ window.Settings = {
             <div class="settings-menu-grid">
                 <div class="set-menu-card" onclick="Settings.renderProfileEditor()"><i class="fas fa-id-card"></i><span>IDENTITY</span><div class="sm-desc">Avatar, Banner, Bio</div></div>
                 <div class="set-menu-card" onclick="Settings.renderAppearanceEditor()"><i class="fas fa-paint-brush"></i><span>APPEARANCE</span><div class="sm-desc">Colors, Fonts, UI</div></div>
+                <div class="set-menu-card" onclick="Settings.renderVoiceSettings()"><i class="fas fa-microphone-lines"></i><span>AUDIO / VOICE</span><div class="sm-desc">Inputs, Outputs, Volume</div></div>
             </div>
-            <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v100.0 STABLE</div>
+            <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v64.0 STABLE</div>
+        `;
+    },
+
+    renderVoiceSettings: async () => {
+        const container = document.getElementById('settings-dynamic-area');
+        if(!window.Voice) return UI.toast("Voice module not ready", "error");
+
+        container.innerHTML = `
+             <div class="set-header-nav"><button class="btn-text" onclick="Settings.renderMainMenu()"><i class="fas fa-arrow-left"></i> BACK</button><h3>AUDIO CONFIG</h3></div>
+             <div class="scroll-area-set" id="voice-settings-box">
+                <div style="text-align:center; padding:20px; color:#666;">Scanning hardware...</div>
+             </div>
+        `;
+
+        // Получаем девайсы через Voice модуль (Agora)
+        const devices = await Voice.getDevices();
+        const mics = devices.mics || [];
+        const speakers = devices.speakers || [];
+        
+        // Рендер
+        const box = document.getElementById('voice-settings-box');
+        
+        let micOptions = mics.map(m => `<option value="${m.deviceId}" ${Voice.currentMicId === m.deviceId ? 'selected' : ''}>${m.label || 'Unknown Microphone'}</option>`).join('');
+        let spkOptions = speakers.map(s => `<option value="${s.deviceId}" ${Voice.currentSpeakerId === s.deviceId ? 'selected' : ''}>${s.label || 'Unknown Speaker'}</option>`).join('');
+
+        if(speakers.length === 0) spkOptions = '<option disabled selected>Default System Output</option>';
+
+        box.innerHTML = `
+            <div class="set-group-title">INPUT DEVICE (MICROPHONE)</div>
+            <select id="set-mic-select" class="neko-select" onchange="Voice.setMicDevice(this.value)">
+                ${micOptions}
+            </select>
+            
+            <div class="control-row" style="margin-top:10px;">
+                <span>Input Gain (Volume)</span>
+                <input type="range" min="0" max="200" value="${Voice.localVolume}" oninput="Voice.setLocalVolume(this.value)">
+            </div>
+            
+            <div class="set-group-title" style="margin-top:30px;">OUTPUT DEVICE (SPEAKERS)</div>
+            <select id="set-spk-select" class="neko-select" onchange="Voice.setSpeakerDevice(this.value)">
+                ${spkOptions}
+            </select>
+            <div class="sm-desc" style="margin-top:5px;">Note: Speaker selection is limited by browser permissions.</div>
+
+            <div class="set-group-title" style="margin-top:30px;">MIC TEST</div>
+            <div style="background:#000; padding:15px; border-radius:12px; border:1px solid #333; display:flex; align-items:center; gap:15px;">
+                <button class="btn-icon-sm" id="btn-mic-test" onclick="Voice.toggleMicTest()">START TEST</button>
+                <div style="flex:1; height:6px; background:#222; border-radius:3px; overflow:hidden;">
+                    <div id="mic-test-bar" style="width:0%; height:100%; background:var(--primary); transition: width 0.05s;"></div>
+                </div>
+            </div>
         `;
     },
 

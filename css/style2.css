@@ -1,5 +1,5 @@
 /* =========================================
-   NEKO CORE EXTENDED STYLES (v100)
+   NEKO CORE EXTENDED STYLES (v56)
    Settings, Profile, Advanced Chat UI
    ========================================= */
 
@@ -419,4 +419,94 @@ label[for="file-in"]:hover { color: #fff; }
     background: #ff0055;
     color: #fff;
     box-shadow: 0 0 15px #ff0055;
+}
+
+/* === VOICE TERMINAL OVERLAY === */
+.voice-terminal-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+}
+.vt-window {
+    width: 90%;
+    max-width: 600px;
+    height: 400px;
+    background: #050505;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 50px rgba(214, 0, 255, 0.1);
+}
+.vt-header {
+    background: #111;
+    padding: 8px 15px;
+    color: #fff;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #333;
+}
+.vt-content {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+.vt-line {
+    margin-bottom: 5px;
+    animation: fadeIn 0.1s;
+}
+
+/* === SETTINGS SELECTS & SLIDERS (UPDATED) === */
+.neko-select {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    background-color: rgba(0,0,0,0.3);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 12px 15px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 8px;
+    outline: none;
+    
+    /* Custom Arrow SVG */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 16px;
+    transition: all 0.2s ease;
+}
+.neko-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-dim);
+    background-color: rgba(0,0,0,0.6);
+}
+/* Style for dropdown options */
+.neko-select option {
+    background-color: #05000a;
+    color: #fff;
+    padding: 10px;
+}
+
+.vol-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+.mini-vol-range {
+    width: 80px !important;
+    height: 3px !important;
+}
+.mini-vol-range::-webkit-slider-thumb {
+    width: 12px !important;
+    height: 12px !important;
+    margin-top: -5px !important;
 }

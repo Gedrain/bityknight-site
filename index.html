@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v100</title>
+    <title>NekoCore v64</title>
     
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/style2.css">
+    <link rel="stylesheet" href="css/style.css?v=65">
+    <link rel="stylesheet" href="css/style2.css?v=65">
     <style id="theme-style"></style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -34,6 +34,15 @@
         <div id="boot-log" class="terminal-container"></div>
         <div id="glitch-logo" class="glitch-logo-container">
             <div class="glitch-text" data-text="NEKOCHAT">NEKOCHAT</div>
+        </div>
+    </div>
+
+    <div id="voice-overlay" class="voice-terminal-overlay hidden">
+        <div class="vt-window">
+            <div class="vt-header">
+                <span style="color:#d600ff;">root@neko-core</span>:~# connect_voice_protocol.sh
+            </div>
+            <div id="vt-content" class="vt-content"></div>
         </div>
     </div>
 

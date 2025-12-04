@@ -1,5 +1,5 @@
 // --- КОНФИГУРАЦИЯ AGORA ---
-const AGORA_APP_ID = "96d3cebedfb044aa846e83d2bb818409"; // ID из твоего примера
+const AGORA_APP_ID = "96d3cebedfb044aa846e83d2bb818409"; 
 // ---------------------------
 
 window.Voice = {
@@ -11,8 +11,17 @@ window.Voice = {
     isDeafened: false,
     croppedBanner: null,
     listListener: null,
+    
+    // Новые свойства для аудио настроек
+    currentMicId: null,
+    currentSpeakerId: null,
+    localVolume: 100, // Гейн микрофона
+    remoteVolumes: {}, // {uid: int} громкость других юзеров
+    isTestRunning: false,
+    testTrack: null,
+    testInterval: null,
 
-    init: () => {
+    init: async () => {
         // Настройка загрузки баннера
         const banIn = document.getElementById('new-v-banner');
         if(banIn) {
@@ -31,6 +40,19 @@ window.Voice = {
         if(window.AgoraRTC) {
             Voice.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
             Voice.setupAgoraListeners();
+            
+            // Пытаемся получить сохраненные устройства
+            Voice.currentMicId = localStorage.getItem('neko_mic_id');
+            Voice.currentSpeakerId = localStorage.getItem('neko_spk_id');
+            const vol = localStorage.getItem('neko_mic_vol');
+            if(vol) Voice.localVolume = parseInt(vol);
+            
+            // Запрашиваем права, чтобы получить список девайсов
+            try {
+                // Это нужно только для списка, трек не создаем пока
+                await AgoraRTC.getDevices();
+            } catch(e) { console.warn("Permissions pending"); }
+
         } else {
             console.error("Agora SDK not loaded!");
         }
@@ -45,11 +67,20 @@ window.Voice = {
             
             if (mediaType === "audio") {
                 const remoteAudioTrack = user.audioTrack;
+                // Применяем сохраненную громкость для этого юзера
+                const vol = Voice.remoteVolumes[user.uid] !== undefined ? Voice.remoteVolumes[user.uid] : 100;
+                remoteAudioTrack.setVolume(vol);
+
                 // Если у нас не включен "Deafen" (звук выкл), играем
                 if(!Voice.isDeafened) {
                     remoteAudioTrack.play();
                 }
                 Voice.remoteUsers[user.uid] = user;
+                
+                // Если мы открыли список участников, обновить его, чтобы появился слайдер
+                if(document.getElementById('modal-members').classList.contains('open')) {
+                    Voice.viewMembers(Voice.currentChannel);
+                }
             }
         });
 
@@ -57,6 +88,84 @@ window.Voice = {
         Voice.client.on("user-unpublished", (user) => {
             delete Voice.remoteUsers[user.uid];
         });
+    },
+
+    // --- УСТРОЙСТВА И НАСТРОЙКИ ---
+    getDevices: async () => {
+        try {
+            const devices = await AgoraRTC.getDevices();
+            const mics = devices.filter(d => d.kind === 'audioinput');
+            const speakers = devices.filter(d => d.kind === 'audiooutput');
+            return { mics, speakers };
+        } catch(e) {
+            console.error(e);
+            return { mics: [], speakers: [] };
+        }
+    },
+
+    setMicDevice: (deviceId) => {
+        Voice.currentMicId = deviceId;
+        localStorage.setItem('neko_mic_id', deviceId);
+        if(Voice.localAudioTrack) {
+            Voice.localAudioTrack.setDevice(deviceId);
+        }
+    },
+
+    setSpeakerDevice: (deviceId) => {
+        Voice.currentSpeakerId = deviceId;
+        localStorage.setItem('neko_spk_id', deviceId);
+        // Примечание: В браузере смена выходного устройства может не работать без пользовательского жеста
+        // или поддержки setSinkId
+        Object.values(Voice.remoteUsers).forEach(u => {
+             if(u.audioTrack) {
+                 // Agora способ (если поддерживается) или через HTML Element
+                 // u.audioTrack.setPlaybackDevice(deviceId); // Experimental
+             }
+        });
+    },
+
+    setLocalVolume: (val) => {
+        Voice.localVolume = parseInt(val);
+        localStorage.setItem('neko_mic_vol', val);
+        if(Voice.localAudioTrack) {
+            Voice.localAudioTrack.setVolume(Voice.localVolume);
+        }
+    },
+    
+    setRemoteVolume: (uid, val) => {
+        Voice.remoteVolumes[uid] = parseInt(val);
+        const user = Voice.remoteUsers[uid];
+        if(user && user.audioTrack) {
+            user.audioTrack.setVolume(parseInt(val));
+        }
+    },
+
+    toggleMicTest: async () => {
+        const btn = document.getElementById('btn-mic-test');
+        const bar = document.getElementById('mic-test-bar');
+        
+        if(Voice.isTestRunning) {
+            // Stop
+            Voice.isTestRunning = false;
+            if(Voice.testTrack) { Voice.testTrack.close(); Voice.testTrack = null; }
+            if(Voice.testInterval) clearInterval(Voice.testInterval);
+            if(btn) btn.innerText = "START TEST";
+            if(bar) bar.style.width = '0%';
+        } else {
+            // Start
+            try {
+                Voice.testTrack = await AgoraRTC.createMicrophoneAudioTrack({ microphoneId: Voice.currentMicId });
+                Voice.isTestRunning = true;
+                if(btn) btn.innerText = "STOP TEST";
+                
+                Voice.testInterval = setInterval(() => {
+                    const level = Voice.testTrack.getVolumeLevel(); // 0 to 1
+                    if(bar) bar.style.width = (level * 100 * 1.5) + '%'; // Усиливаем визуально
+                }, 100);
+            } catch(e) {
+                UI.toast("Mic access failed", "error");
+            }
+        }
     },
 
     // --- УПРАВЛЕНИЕ КОМНАТАМИ ---
@@ -171,11 +280,28 @@ window.Voice = {
             Object.keys(users).forEach(uid => {
                 const u = users[uid];
                 const micStatus = u.isMuted ? '<i class="fas fa-microphone-slash" style="color:#ff0055;"></i>' : '<i class="fas fa-microphone" style="color:#00ff9d;"></i>';
+                
+                // Слайдер громкости (только если это не мы сами)
+                let volControl = '';
+                if(uid !== State.user.uid) {
+                    const currentVol = Voice.remoteVolumes[uid] !== undefined ? Voice.remoteVolumes[uid] : 100;
+                    volControl = `
+                        <div class="vol-slider-container">
+                            <i class="fas fa-volume-down" style="font-size:0.7rem; color:#666;"></i>
+                            <input type="range" min="0" max="200" value="${currentVol}" class="mini-vol-range" oninput="Voice.setRemoteVolume('${uid}', this.value)">
+                        </div>
+                    `;
+                }
+
                 const card = document.createElement('div');
                 card.className = 'member-card';
                 card.innerHTML = `
                     <div class="member-avi-wrap"><img src="${u.avatar || 'https://via.placeholder.com/50'}" class="member-avi"></div>
-                    <div class="member-info"><div class="member-name">${u.name}</div><div class="member-seen">Voice Connected ${micStatus}</div></div>
+                    <div class="member-info">
+                        <div class="member-name">${u.name}</div>
+                        <div class="member-seen">Voice Connected ${micStatus}</div>
+                        ${volControl}
+                    </div>
                     <button class="btn-text" style="padding:5px 10px; border:1px solid #333;" onclick="window.Profile.view('${uid}')">PROFILE</button>
                 `;
                 list.appendChild(card);
@@ -208,25 +334,60 @@ window.Voice = {
         }
     },
 
+    // Логирование в терминал оверлея
+    termLog: (txt, color="#d600ff") => {
+        const box = document.getElementById('vt-content');
+        const p = document.createElement('div');
+        p.className = 'vt-line';
+        p.innerHTML = `<span style="color:${color}">></span> ${txt}`;
+        box.appendChild(p);
+        box.scrollTop = box.scrollHeight;
+    },
+
     join: async (channelName) => {
+        const overlay = document.getElementById('voice-overlay');
+        const content = document.getElementById('vt-content');
+        content.innerHTML = '';
+        overlay.classList.remove('hidden');
+
+        // Эмуляция задержек для красоты терминала
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
         try {
+            Voice.termLog("Initializing Audio Subsystem...");
+            await sleep(400);
+
             // Используем часть UID как ID для Agora
             const uid = State.user.uid; 
+            
+            Voice.termLog("Checking Frequency: " + channelName);
+            await sleep(300);
+
+            Voice.termLog("Establishing P2P Handshake...", "#00ff9d");
 
             // 1. Вступаем в канал Agora (token = null для Testing Mode)
             await Voice.client.join(AGORA_APP_ID, channelName, null, uid);
 
-            // 2. Создаем локальный аудио трек
-            Voice.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+            Voice.termLog("Uplink Established.");
+            Voice.termLog("Activating Microphone...", "#fcee0a");
+
+            // 2. Создаем локальный аудио трек с выбранным микрофоном
+            const config = Voice.currentMicId ? { microphoneId: Voice.currentMicId } : {};
+            Voice.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack(config);
             
+            // Ставим громкость (Gain)
+            Voice.localAudioTrack.setVolume(Voice.localVolume);
+
             // 3. Публикуем его (отправляем на сервер)
             await Voice.client.publish([Voice.localAudioTrack]);
+            
+            Voice.termLog("Audio Stream Active.", "#00ff9d");
+            await sleep(600); // Даем пользователю насладиться терминалом
 
             // 4. Обновляем UI и БД
             Voice.currentChannel = channelName;
             Voice.renderActiveBar(true);
-            UI.toast("Server Connection Established", "success");
-
+            
             const myData = {
                 name: State.profile.displayName,
                 avatar: State.profile.avatar,
@@ -238,11 +399,17 @@ window.Voice = {
             // Добавляем в БД
             const ref = db.ref(`voice_channels/${channelName}/users/${State.user.uid}`);
             await ref.set(myData);
-            ref.onDisconnect().remove(); 
+            ref.onDisconnect().remove();
+            
+            overlay.classList.add('hidden'); // Скрываем терминал
+            UI.toast("Voice Connected", "success");
 
         } catch (e) {
             console.error(e);
-            UI.toast("Voice Connection Failed: " + e.message, "error");
+            Voice.termLog("FATAL ERROR: " + e.message, "#ff0055");
+            await sleep(2000);
+            overlay.classList.add('hidden');
+            UI.toast("Connection Failed", "error");
             Voice.leave();
         }
     },
