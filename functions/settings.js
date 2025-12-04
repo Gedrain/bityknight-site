@@ -136,7 +136,7 @@ window.Settings = {
                 <div class="set-menu-card" onclick="Settings.renderProfileEditor()"><i class="fas fa-id-card"></i><span>IDENTITY</span><div class="sm-desc">Avatar, Banner, Bio</div></div>
                 <div class="set-menu-card" onclick="Settings.renderAppearanceEditor()"><i class="fas fa-paint-brush"></i><span>APPEARANCE</span><div class="sm-desc">Colors, Fonts, UI</div></div>
             </div>
-            <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v56.0 STABLE</div>
+            <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v100.0 STABLE</div>
         `;
     },
 
