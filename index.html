@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v57</title>
+    <title>NekoCore v59</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -105,6 +105,7 @@
                 <div class="nav-group">
                     <div class="nav-item active" onclick="Route('channels')"><i class="fas fa-hashtag"></i> CHANNELS</div>
                     <div class="nav-item" id="nav-dms" onclick="Route('dms')"><i class="fas fa-comments"></i> <span>MESSAGES</span></div>
+                    <div class="nav-item" onclick="Route('voice')"><i class="fas fa-microphone-alt"></i> VOICE</div>
                     <div class="nav-item" onclick="Route('search')"><i class="fas fa-search"></i> SEARCH</div>
                 </div>
                 <div class="nav-group bottom">
@@ -159,6 +160,28 @@
                 </div>
 
                 <div id="tab-dms" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">MESSAGES</div><div></div></div><div id="dm-list" class="list-container"></div></div>
+                
+                <div id="tab-voice" class="tab-pane">
+                    <div class="top-bar">
+                        <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
+                        <div class="top-title">VOICE ROOMS</div>
+                        <div style="display:flex; justify-content:center; align-items:center;">
+                            <i class="fas fa-plus-circle" style="cursor:pointer; color:var(--secondary); font-size:1.2rem;" onclick="document.getElementById('modal-create-voice').classList.add('open')"></i>
+                        </div>
+                    </div>
+                    <div id="voice-list" class="list-container"></div>
+                    
+                    <div id="voice-control-bar" class="voice-control-bar hidden">
+                        <div class="v-status-light"></div>
+                        <div class="v-ctrl-info">Voice Connected</div>
+                        <div class="v-buttons">
+                            <button id="btn-v-mute" onclick="Voice.toggleMute()"><i class="fas fa-microphone"></i></button>
+                            <button id="btn-v-deaf" onclick="Voice.toggleDeafen()"><i class="fas fa-volume-up"></i></button>
+                            <button id="btn-v-leave" class="danger" onclick="Voice.leave()"><i class="fas fa-phone-slash"></i></button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
                 <div id="tab-settings" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SYSTEM CONFIG</div><div></div></div><div class="admin-scroll-area"><div id="settings-dynamic-area" class="p-20 flex-col"></div></div></div>
                 <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
@@ -182,6 +205,45 @@
         </div>
     </div>
 
+    <div id="modal-create-voice" class="modal-overlay">
+        <div class="modal-box">
+            <h3>CREATE VOICE ROOM</h3>
+            <div style="text-align:left; margin-bottom:15px; color:#aaa; font-size:0.8rem;">Establish a new frequency...</div>
+            
+            <div class="ch-preview-box" style="height:100px;">
+                <div id="new-v-banner-prev" class="ch-preview-banner"></div>
+            </div>
+            <label class="file-zone" for="new-v-banner" style="margin-bottom:15px;"><i class="fas fa-panorama"></i><span>Set Banner</span></label>
+            <input type="file" id="new-v-banner" hidden accept="image/*">
+            
+            <input type="text" id="new-v-name" placeholder="Room Name">
+            <label class="toggle-wrapper">
+                <input type="checkbox" id="new-v-priv" class="toggle-checkbox" onchange="document.getElementById('new-v-pass').classList.toggle('hidden', !this.checked)">
+                <div class="toggle-switch"></div>
+                <div class="toggle-label">Private Frequency</div>
+            </label>
+            <input type="password" id="new-v-pass" class="hidden" placeholder="Access Code">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-solid" onclick="Voice.create()">ESTABLISH</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-create-voice').classList.remove('open')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-voice-pass" class="modal-overlay">
+        <div class="modal-box security-box">
+            <div class="security-header"><i class="fas fa-lock"></i><span>SECURE FREQUENCY</span></div>
+            <div class="security-body">
+                <p>ENCRYPTED VOICE SIGNAL</p>
+                <div class="input-group"><i class="fas fa-key input-icon"></i><input type="password" id="voice-auth-pass" placeholder="ACCESS CODE"><div class="input-line"></div></div>
+            </div>
+            <div class="security-footer">
+                <button class="btn-solid" onclick="Voice.authAndJoin()">CONNECT</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-voice-pass').classList.remove('open')">ABORT</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="modal-pass" class="modal-overlay">
         <div class="modal-box security-box">
             <div class="security-header"><i class="fas fa-lock"></i><span>SECURE CHANNEL</span></div>
@@ -196,7 +258,7 @@
         </div>
     </div>
 
-    <div id="modal-members" class="modal-overlay"><div class="modal-box" style="height: 80vh; display:flex; flex-direction:column; padding:0; overflow:hidden;"><div class="neko-card-header" style="padding:15px; border-bottom:1px solid #333;"><span>CHANNEL MEMBERS</span><i class="fas fa-users" style="color:var(--primary)"></i></div><div id="members-list" class="list-container" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;"></div><div style="padding:15px; border-top:1px solid #333; background:#09090b;"><button class="btn-text" onclick="document.getElementById('modal-members').classList.remove('open')">CLOSE</button></div></div></div>
+    <div id="modal-members" class="modal-overlay"><div class="modal-box" style="height: 80vh; display:flex; flex-direction:column; padding:0; overflow:hidden;"><div class="neko-card-header" style="padding:15px; border-bottom:1px solid #333;"><span>MEMBERS</span><i class="fas fa-users" style="color:var(--primary)"></i></div><div id="members-list" class="list-container" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;"></div><div style="padding:15px; border-top:1px solid #333; background:#09090b;"><button class="btn-text" onclick="document.getElementById('modal-members').classList.remove('open')">CLOSE</button></div></div></div>
     
     <div id="modal-user" class="modal-overlay">
         <div class="modal-content profile-card-modal">
@@ -233,6 +295,7 @@
     <script src="functions/search.js"></script>
     <script src="functions/admin.js"></script>
     <script src="functions/auth.js"></script>
+    <script src="functions/voice.js"></script>
     <script src="functions/main.js"></script>
     <script>
         document.getElementById('new-ch-priv').onchange = e => document.getElementById('new-ch-pass').classList.toggle('hidden', !e.target.checked);

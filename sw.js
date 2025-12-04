@@ -1,17 +1,18 @@
-const CACHE_NAME = 'neko-core-v57'; // ВЕРСИЯ ОБНОВЛЕНА: v53 -> v57
-const DYNAMIC_CACHE = 'neko-dynamic-v57';
+const CACHE_NAME = 'neko-core-v60';
+const DYNAMIC_CACHE = 'neko-dynamic-v60';
 
 const ASSETS = [
     './',
     './index.html',
     './css/style.css',
+    './css/style2.css',
+    './functions/voice.js',
     './manifest.json',
     './icon.png'
 ];
 
-// Установка Service Worker и кэширование статики
 self.addEventListener('install', (event) => {
-    self.skipWaiting(); // Принудительно активировать новый SW
+    self.skipWaiting(); 
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS);
@@ -19,45 +20,37 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Активация и удаление старого кэша
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    // Удаляем все кэши, которые не совпадают с новыми версиями
                     if (key !== CACHE_NAME && key !== DYNAMIC_CACHE) {
                         return caches.delete(key);
                     }
                 })
             );
-        }).then(() => self.clients.claim()) // Немедленно захватить контроль над страницей
+        }).then(() => self.clients.claim()) 
     );
 });
 
-// Стратегия Network First (Сначала сеть, потом кэш)
-// Это гарантирует, что пользователь всегда получит свежую версию, если есть интернет
 self.addEventListener('fetch', (event) => {
-    // Игнорируем запросы к другим доменам или API
     if (!event.request.url.startsWith(self.location.origin)) return;
 
     event.respondWith(
         fetch(event.request)
             .then((networkResponse) => {
                 return caches.open(DYNAMIC_CACHE).then((cache) => {
-                    // Кэшируем новую версию файла
                     cache.put(event.request, networkResponse.clone());
                     return networkResponse;
                 });
             })
             .catch(() => {
-                // Если нет сети, берем из кэша
                 return caches.match(event.request);
             })
     );
 });
 
-// Обработка Push-уведомлений
 self.addEventListener('push', function(event) {
     if (!(self.Notification && self.Notification.permission === 'granted')) {
         return;

@@ -1,11 +1,27 @@
 window.Route = (t) => {
     document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(e => e.classList.remove('active'));
-    const btn = document.querySelector(`.nav-item[onclick="Route('${t}')"]`); if(btn) btn.classList.add('active');
-    const tab = document.getElementById('tab-'+t); if(tab) tab.classList.add('active');
-    const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('sidebar-overlay'); if(sidebar) sidebar.classList.remove('open'); if(overlay) overlay.classList.remove('open');
+    
+    // Активируем кнопку навигации
+    const btn = document.querySelector(`.nav-item[onclick="Route('${t}')"]`); 
+    if(btn) btn.classList.add('active');
+    
+    // Показываем таб
+    const tab = document.getElementById('tab-'+t); 
+    if(tab) tab.classList.add('active');
+    
+    // Закрываем меню на мобильных
+    const sidebar = document.getElementById('sidebar'); 
+    const overlay = document.getElementById('sidebar-overlay'); 
+    if(sidebar) sidebar.classList.remove('open'); 
+    if(overlay) overlay.classList.remove('open');
+    
+    // ЛОГИКА ЗАГРУЗКИ КОНТЕНТА
     if(t === 'dms') Chat.loadDMs();
     if(t === 'settings') { if(window.Settings && Settings.renderMainMenu) Settings.renderMainMenu(); }
+    
+    // !!! ИСПРАВЛЕНИЕ: Принудительная загрузка голосовых каналов при клике !!!
+    if(t === 'voice' && window.Voice) Voice.load();
 };
 
 const Background = {

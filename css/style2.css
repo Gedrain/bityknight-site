@@ -258,3 +258,165 @@ label[for="file-in"]:hover { color: #fff; }
     min-width: 35px;
     text-align: right;
 }
+
+/* === VOICE CHAT UI === */
+.voice-card {
+    background: rgba(22, 22, 28, 0.6);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    margin-bottom: 15px;
+    position: relative;
+    /* Banner support */
+    background-size: cover;
+    background-position: center;
+}
+.voice-card:hover {
+    border-color: var(--secondary);
+    background-color: rgba(22, 22, 28, 0.9); /* Fallback */
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+}
+.voice-card.active {
+    border-color: #00ff9d;
+    background-color: rgba(0, 255, 157, 0.05); /* Fallback */
+}
+.v-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    position: relative; z-index: 2;
+}
+.v-card-title {
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #fff;
+    text-shadow: 0 2px 4px #000;
+}
+.v-card-count {
+    font-family: monospace;
+    color: var(--secondary);
+    font-size: 0.9rem;
+    text-shadow: 0 2px 4px #000;
+}
+.voice-users-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    position: relative; z-index: 2;
+}
+.v-mini-avi {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.1);
+    object-fit: cover;
+}
+
+.v-card-controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    position: relative; z-index: 2;
+}
+.btn-icon-sm {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: flex; align-items: center; gap: 5px;
+    transition: 0.2s;
+}
+.btn-icon-sm:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-color: #fff;
+}
+.btn-icon-sm.danger {
+    border-color: #ff0055;
+    color: #ff0055;
+}
+.btn-icon-sm.danger:hover {
+    background: #ff0055;
+    color: #fff;
+}
+
+/* Voice Control Bar */
+.voice-control-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 14, 0.95);
+    border: 1px solid var(--secondary);
+    padding: 15px 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    z-index: 2000;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    width: auto;
+    min-width: 300px;
+    justify-content: space-between;
+}
+@keyframes slideUp { from { transform: translate(-50%, 100%); } to { transform: translate(-50%, 0); } }
+
+.v-status-light {
+    width: 10px; height: 10px;
+    background: #00ff9d;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ff9d;
+    animation: pulse-green 1.5s infinite;
+}
+@keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+.v-ctrl-info {
+    font-family: var(--font-head);
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+.v-buttons {
+    display: flex;
+    gap: 10px;
+}
+.v-buttons button {
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex; justify-content: center; align-items: center;
+}
+.v-buttons button:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.1);
+}
+.v-buttons button.active {
+    background: #fff;
+    color: #000;
+}
+.v-buttons button.danger {
+    border-color: #ff0055;
+    color: #ff0055;
+}
+.v-buttons button.danger:hover {
+    background: #ff0055;
+    color: #fff;
+    box-shadow: 0 0 15px #ff0055;
+}
