@@ -15,7 +15,7 @@ window.Voice = {
     // Настройки PTT
     pttEnabled: false,    
     isPttActive: false,   
-    pttKey: 'Space',      // Клавиша по умолчанию
+    pttKey: 'Space',
 
     croppedBanner: null,
     listListener: null,
@@ -31,12 +31,16 @@ window.Voice = {
     testTrack: null,
     testInterval: null,
 
-    // Свойства для P2P звонков
+    // Свойства звонков
     pendingCallData: null,
     currentCallRef: null,
     activeRemoteUid: null,
 
+    // Состояние оверлея
+    isOverlayFull: true,
+
     init: async () => {
+        // Обработка загрузки баннера при создании канала
         const banIn = document.getElementById('new-v-banner');
         if(banIn) {
             banIn.onchange = e => {
@@ -54,6 +58,7 @@ window.Voice = {
             Voice.client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
             Voice.setupAgoraListeners();
             
+            // Загрузка настроек
             Voice.currentMicId = localStorage.getItem('neko_mic_id');
             Voice.currentSpeakerId = localStorage.getItem('neko_spk_id');
             
@@ -66,7 +71,6 @@ window.Voice = {
             const savedPtt = localStorage.getItem('neko_ptt_enabled');
             Voice.pttEnabled = savedPtt === 'true';
 
-            // Загружаем сохраненную кнопку
             const savedKey = localStorage.getItem('neko_ptt_key');
             if(savedKey) Voice.pttKey = savedKey;
 
@@ -97,43 +101,56 @@ window.Voice = {
                     remoteAudioTrack.play();
                 }
                 
-                if(document.getElementById('modal-members').classList.contains('open')) {
-                    Voice.viewMembers(Voice.currentChannel);
-                }
-
+                // Если мы в ДМ, обновляем статус в оверлее
                 if(Voice.currentChannel && Voice.currentChannel.startsWith('dm_')) {
                     Voice.activeRemoteUid = user.uid;
-                    document.getElementById('cs-status-text').innerText = "CONNECTED";
-                    document.getElementById('cs-status-text').style.color = "#00ff9d";
+                    document.getElementById('ci-status-text').innerText = "CONNECTED";
+                    document.getElementById('ci-status-text').style.color = "#00ff9d";
+                    
                     const vol = Voice.remoteVolumes[user.uid] !== undefined ? Voice.remoteVolumes[user.uid] : 100;
-                    document.getElementById('cs-remote-vol').value = vol;
+                    document.getElementById('ci-remote-vol').value = vol;
                 }
+            }
+
+            // Видео обрабатывается в video.js, но вызывается отсюда
+            if (mediaType === "video") {
+                if(window.Video) Video.renderRemote(user);
             }
         });
 
-        Voice.client.on("user-unpublished", (user) => {
-            delete Voice.remoteUsers[user.uid];
-            if(Voice.activeRemoteUid === user.uid) {
-                document.getElementById('cs-status-text').innerText = "WAITING...";
-                document.getElementById('cs-status-text').style.color = "#ffcc00";
+        Voice.client.on("user-unpublished", (user, mediaType) => {
+            if (mediaType === "audio") {
+                delete Voice.remoteUsers[user.uid];
+                if(Voice.activeRemoteUid === user.uid) {
+                    document.getElementById('ci-status-text').innerText = "WAITING...";
+                    document.getElementById('ci-status-text').style.color = "#ffcc00";
+                }
+            }
+            if (mediaType === "video") {
+                // Удаляем видео из DOM
+                const vidDiv = document.getElementById(`vid-${user.uid}`);
+                if(vidDiv) vidDiv.remove();
+                
+                // Проверяем, нужно ли скрыть режим видео в оверлее
+                const stage = document.getElementById('video-remote-container');
+                if(stage && stage.children.length === 0 && (!window.Video || !Video.isVideoEnabled)) {
+                    document.getElementById('call-interface').classList.remove('video-active');
+                }
             }
         });
     },
 
-    // --- PUSH TO TALK LOGIC ---
+    // --- ЛОГИКА PUSH TO TALK ---
     
-    // Биндинг новой клавиши
     bindPttKey: (btnElement) => {
         btnElement.innerText = "PRESS ANY KEY...";
-        btnElement.classList.add('active'); // Визуально выделяем
+        btnElement.classList.add('active');
 
         const handler = (e) => {
             e.preventDefault();
-            e.stopPropagation(); // Чтобы не сработало handlePttDown
+            e.stopPropagation();
 
             const code = e.code;
-            
-            // Игнорируем Escape, если хотим дать возможность отменить (опционально)
             if(code === 'Escape') {
                 document.removeEventListener('keydown', handler, true);
                 btnElement.innerText = Voice.formatKeyName(Voice.pttKey);
@@ -148,11 +165,8 @@ window.Voice = {
             btnElement.classList.remove('active');
             
             UI.toast(`PTT Key set to: ${Voice.formatKeyName(code)}`, "success");
-            
             document.removeEventListener('keydown', handler, true);
         };
-
-        // Используем capture phase (true), чтобы перехватить событие до остальных
         document.addEventListener('keydown', handler, true);
     },
 
@@ -163,22 +177,15 @@ window.Voice = {
 
     handlePttDown: (e) => {
         if(!Voice.pttEnabled || !Voice.localAudioTrack || Voice.isPttActive) return;
-        
-        // Проверяем сохраненную кнопку
         if(e.code !== Voice.pttKey) return; 
 
-        // Не активировать, если пишем в инпут (только если это не F-клавиши или Control/Alt)
         const tag = document.activeElement.tagName;
         const isInput = (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable);
-        
-        // Если кнопка - буква/пробел, блокируем PTT при вводе текста
-        // Если кнопка - Ctrl/Alt/Shift/F1..., разрешаем даже при вводе
         const isSpecialKey = e.code.includes('Control') || e.code.includes('Alt') || e.code.includes('Shift') || e.code.includes('F');
         
         if(isInput && !isSpecialKey) return;
 
         e.preventDefault(); 
-        
         Voice.isPttActive = true;
         Voice.updateMicState();
         UI.toast("Transmitting...", "msg");
@@ -202,7 +209,6 @@ window.Voice = {
         if(!Voice.localAudioTrack) return;
 
         let shouldBeEnabled = true;
-
         if(Voice.pttEnabled) {
             shouldBeEnabled = Voice.isPttActive;
         } else {
@@ -213,32 +219,27 @@ window.Voice = {
         
         const icon = shouldBeEnabled ? '<i class="fas fa-microphone"></i>' : '<i class="fas fa-microphone-slash"></i>';
         
-        const btnBar = document.getElementById('btn-v-mute');
-        if(btnBar) {
-            btnBar.innerHTML = icon;
-            btnBar.classList.toggle('active', !shouldBeEnabled);
+        // Обновляем кнопку в оверлее
+        const btnOverlay = document.getElementById('btn-ci-mute');
+        if(btnOverlay) { 
+            btnOverlay.innerHTML = icon; 
+            btnOverlay.classList.toggle('active', !shouldBeEnabled); 
+            if(!shouldBeEnabled) btnOverlay.classList.add('danger');
+            else btnOverlay.classList.remove('danger');
         }
 
-        const btnSide = document.getElementById('btn-cs-mute');
-        if(btnSide) {
-            btnSide.innerHTML = icon;
-            btnSide.classList.toggle('active', !shouldBeEnabled);
-        }
-
+        // Обновляем в БД статус
         if(Voice.currentChannel && !Voice.currentChannel.startsWith('dm_')) {
             db.ref(`voice_channels/${Voice.currentChannel}/users/${State.user.uid}`).update({isMuted: !shouldBeEnabled});
         }
     },
 
-    // --- VOLUME LOGIC ---
+    // --- УПРАВЛЕНИЕ ЗВУКОМ ---
     
     setMasterVolume: (val) => {
         Voice.masterVolume = parseInt(val);
         localStorage.setItem('neko_master_vol', val);
-        
-        Object.keys(Voice.remoteUsers).forEach(uid => {
-            Voice.applyUserVolume(uid);
-        });
+        Object.keys(Voice.remoteUsers).forEach(uid => Voice.applyUserVolume(uid));
     },
 
     setRemoteVolume: (uid, val) => {
@@ -257,14 +258,20 @@ window.Voice = {
         user.audioTrack.setVolume(finalVol);
     },
 
-    // --- DEVICE SETTERS ---
+    updateActiveRemoteVolume: (val) => {
+        // Если это звонок 1 на 1, меняем громкость собеседника
+        if(Voice.activeRemoteUid) {
+            Voice.setRemoteVolume(Voice.activeRemoteUid, val);
+        } else {
+            // Если групповой чат, меняем общую громкость
+            Voice.setMasterVolume(val);
+        }
+    },
 
     setMicDevice: (deviceId) => {
         Voice.currentMicId = deviceId;
         localStorage.setItem('neko_mic_id', deviceId);
-        if(Voice.localAudioTrack) {
-            Voice.localAudioTrack.setDevice(deviceId);
-        }
+        if(Voice.localAudioTrack) Voice.localAudioTrack.setDevice(deviceId);
     },
 
     setSpeakerDevice: (deviceId) => {
@@ -275,9 +282,7 @@ window.Voice = {
     setLocalVolume: (val) => {
         Voice.localVolume = parseInt(val);
         localStorage.setItem('neko_mic_vol', val);
-        if(Voice.localAudioTrack) {
-            Voice.localAudioTrack.setVolume(Voice.localVolume);
-        }
+        if(Voice.localAudioTrack) Voice.localAudioTrack.setVolume(Voice.localVolume);
     },
 
     getDevices: async () => {
@@ -289,12 +294,6 @@ window.Voice = {
         } catch(e) {
             console.error(e);
             return { mics: [], speakers: [] };
-        }
-    },
-
-    updateActiveRemoteVolume: (val) => {
-        if(Voice.activeRemoteUid) {
-            Voice.setRemoteVolume(Voice.activeRemoteUid, val);
         }
     },
 
@@ -315,7 +314,7 @@ window.Voice = {
                 if(btn) btn.innerText = "STOP TEST";
                 
                 Voice.testInterval = setInterval(() => {
-                    const level = Voice.testTrack.getVolumeLevel(); // 0 to 1
+                    const level = Voice.testTrack.getVolumeLevel();
                     if(bar) bar.style.width = (level * 100 * 1.5) + '%';
                 }, 100);
             } catch(e) {
@@ -324,7 +323,7 @@ window.Voice = {
         }
     },
 
-    // --- CHANNEL MANAGEMENT ---
+    // --- УПРАВЛЕНИЕ КАНАЛАМИ ---
     create: () => {
         const n = document.getElementById('new-v-name').value;
         const isPriv = document.getElementById('new-v-priv').checked;
@@ -437,17 +436,6 @@ window.Voice = {
                 const u = users[uid];
                 const micStatus = u.isMuted ? '<i class="fas fa-microphone-slash" style="color:#ff0055;"></i>' : '<i class="fas fa-microphone" style="color:#00ff9d;"></i>';
                 
-                let volControl = '';
-                if(uid !== State.user.uid) {
-                    const currentVol = Voice.remoteVolumes[uid] !== undefined ? Voice.remoteVolumes[uid] : 100;
-                    volControl = `
-                        <div class="vol-slider-container">
-                            <i class="fas fa-volume-down" style="font-size:0.7rem; color:#666;"></i>
-                            <input type="range" min="0" max="200" value="${currentVol}" class="mini-vol-range" oninput="Voice.setRemoteVolume('${uid}', this.value)">
-                        </div>
-                    `;
-                }
-
                 const card = document.createElement('div');
                 card.className = 'member-card';
                 card.innerHTML = `
@@ -455,7 +443,6 @@ window.Voice = {
                     <div class="member-info">
                         <div class="member-name">${u.name}</div>
                         <div class="member-seen">Voice Connected ${micStatus}</div>
-                        ${volControl}
                     </div>
                     <button class="btn-text" style="padding:5px 10px; border:1px solid #333;" onclick="window.Profile.view('${uid}')">PROFILE</button>
                 `;
@@ -472,7 +459,9 @@ window.Voice = {
             State.pendingVoice = { id: key, pass: data.pass };
             document.getElementById('modal-voice-pass').classList.add('open');
         } else {
-            Voice.join(key);
+            // Для каналов передаем название канала и картинку (баннер канала или дефолт)
+            const banner = data.banner || "https://via.placeholder.com/150/000000/ffffff?text=Voice";
+            Voice.join(key, false, data.name, banner);
         }
     },
 
@@ -481,7 +470,12 @@ window.Voice = {
         if(inp.value === State.pendingVoice.pass) {
             document.getElementById('modal-voice-pass').classList.remove('open');
             inp.value = '';
-            Voice.join(State.pendingVoice.id);
+            // Получаем данные канала для UI
+            db.ref('voice_channels/' + State.pendingVoice.id).once('value', snap => {
+                const v = snap.val();
+                const banner = v.banner || "https://via.placeholder.com/150/000000/ffffff?text=Voice";
+                Voice.join(State.pendingVoice.id, false, v.name, banner);
+            });
         } else {
             UI.toast("Wrong Password", "error");
         }
@@ -489,6 +483,7 @@ window.Voice = {
 
     termLog: (txt, color="#d600ff") => {
         const box = document.getElementById('vt-content');
+        if(!box) return;
         const p = document.createElement('div');
         p.className = 'vt-line';
         p.innerHTML = `<span style="color:${color}">></span> ${txt}`;
@@ -496,7 +491,8 @@ window.Voice = {
         box.scrollTop = box.scrollHeight;
     },
 
-    join: async (channelName, isDM = false, displayLabel = null, avatar = null) => {
+    // --- ОСНОВНАЯ ФУНКЦИЯ ПОДКЛЮЧЕНИЯ ---
+    join: async (channelName, isDM = false, displayLabel = "Unknown", avatar = null) => {
         const overlay = document.getElementById('voice-overlay');
         const content = document.getElementById('vt-content');
         content.innerHTML = '';
@@ -510,36 +506,36 @@ window.Voice = {
 
             const uid = State.user.uid; 
             
-            Voice.termLog("Checking Frequency: " + channelName);
+            Voice.termLog("Target Frequency: " + channelName);
             await sleep(300);
 
-            Voice.termLog("Establishing P2P Handshake...", "#00ff9d");
+            Voice.termLog("Handshaking AgoraRTC Network...", "#00ff9d");
+            await sleep(400);
 
             await Voice.client.join(AGORA_APP_ID, channelName, null, uid);
 
             Voice.termLog("Uplink Established.");
-            Voice.termLog("Activating Microphone...", "#fcee0a");
-
+            await sleep(200);
+            
+            Voice.termLog("Activating Input Device...", "#fcee0a");
             const config = Voice.currentMicId ? { microphoneId: Voice.currentMicId } : {};
             Voice.localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack(config);
-            
             Voice.localAudioTrack.setVolume(Voice.localVolume);
 
             await Voice.client.publish([Voice.localAudioTrack]);
             
-            Voice.termLog("Audio Stream Active.", "#00ff9d");
-            
+            Voice.termLog("Audio Stream Active. Connected.", "#00ff9d");
             Voice.updateMicState();
 
-            await sleep(600);
+            await sleep(500);
 
             Voice.currentChannel = channelName;
             
-            if(isDM) {
-                Voice.renderP2POverlay(true, displayLabel, avatar);
-            } else {
-                Voice.renderActiveBar(true);
-                
+            // --- ЗАПУСК ЕДИНОГО ИНТЕРФЕЙСА ---
+            Voice.renderCallInterface(true, displayLabel, avatar);
+            // ---------------------------------
+
+            if(!isDM) {
                 const myData = {
                     name: State.profile.displayName,
                     avatar: State.profile.avatar,
@@ -547,14 +543,13 @@ window.Voice = {
                     isMuted: Voice.isMuted, 
                     isDeaf: false
                 };
-                
                 const ref = db.ref(`voice_channels/${channelName}/users/${State.user.uid}`);
                 await ref.set(myData);
                 ref.onDisconnect().remove();
             }
             
             overlay.classList.add('hidden');
-            UI.toast(isDM ? "Call Connected" : "Voice Connected", "success");
+            UI.toast(isDM ? "Call Connected" : "Joined Channel", "success");
 
         } catch (e) {
             console.error(e);
@@ -569,6 +564,9 @@ window.Voice = {
     leave: async () => {
         if(!Voice.currentChannel) return;
         
+        // Очистка видео (если было)
+        if(window.Video) await Video.cleanup();
+
         if(!Voice.currentChannel.startsWith('dm_')) {
             db.ref(`voice_channels/${Voice.currentChannel}/users/${State.user.uid}`).remove();
         }
@@ -589,9 +587,7 @@ window.Voice = {
         Voice.currentChannel = null;
         Voice.activeRemoteUid = null;
         
-        Voice.renderActiveBar(false);
-        Voice.renderP2POverlay(false);
-        
+        Voice.renderCallInterface(false);
         UI.toast("Disconnected", "msg");
     },
 
@@ -615,13 +611,14 @@ window.Voice = {
         });
 
         const icon = Voice.isDeafened ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-headphones"></i>';
-        const iconBar = Voice.isDeafened ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
         
-        const btnBar = document.getElementById('btn-v-deaf');
-        const btnSide = document.getElementById('btn-cs-deaf');
-        
-        if(btnBar) { btnBar.innerHTML = iconBar; btnBar.classList.toggle('active', Voice.isDeafened); }
-        if(btnSide) { btnSide.innerHTML = icon; btnSide.classList.toggle('active', Voice.isDeafened); }
+        const btnOverlay = document.getElementById('btn-ci-deaf');
+        if(btnOverlay) { 
+            btnOverlay.innerHTML = icon; 
+            btnOverlay.classList.toggle('active', Voice.isDeafened);
+            if(Voice.isDeafened) btnOverlay.classList.add('danger');
+            else btnOverlay.classList.remove('danger');
+        }
         
         if(Voice.isDeafened) UI.toast("Sound Disabled", "msg");
         else UI.toast("Sound Enabled", "msg");
@@ -631,31 +628,47 @@ window.Voice = {
         }
     },
 
-    renderActiveBar: (isActive) => {
-        const bar = document.getElementById('voice-control-bar');
-        if(isActive) {
-            bar.classList.remove('hidden');
-            Voice.isMuted = false; 
-            Voice.isDeafened = false;
-            Voice.updateMicState();
-            document.getElementById('btn-v-deaf').classList.remove('active');
+    // --- UI ОВЕРЛЕЯ ---
+    
+    toggleOverlaySize: () => {
+        Voice.isOverlayFull = !Voice.isOverlayFull;
+        Voice.updateOverlayState();
+    },
+
+    updateOverlayState: () => {
+        const el = document.getElementById('call-interface');
+        const icon = document.getElementById('icon-resize');
+        
+        if(Voice.isOverlayFull) {
+            el.classList.remove('mini-mode');
+            el.classList.add('full-mode');
+            if(icon) icon.className = "fas fa-compress-alt"; 
         } else {
-            bar.classList.add('hidden');
+            el.classList.remove('full-mode');
+            el.classList.add('mini-mode');
+            if(icon) icon.className = "fas fa-expand-alt"; 
         }
     },
 
-    renderP2POverlay: (isActive, name = "Unknown", avatar = null) => {
-        const overlay = document.getElementById('call-overlay-sidebar');
+    renderCallInterface: (isActive, name = "Unknown", avatar = null) => {
+        const overlay = document.getElementById('call-interface');
+        
         if(isActive) {
             overlay.classList.remove('hidden');
-            document.getElementById('cs-name').innerText = name;
-            document.getElementById('cs-status-text').innerText = "CALLING...";
-            document.getElementById('cs-status-text').style.color = "#00ff9d";
             
-            if(avatar) document.getElementById('cs-avi').src = avatar;
-            else document.getElementById('cs-avi').src = "https://via.placeholder.com/80";
+            // Всегда открываем на весь экран при старте
+            Voice.isOverlayFull = true;
+            Voice.updateOverlayState();
+
+            document.getElementById('ci-name').innerText = name;
+            document.getElementById('ci-status-text').innerText = "CONNECTED";
+            document.getElementById('ci-status-text').style.color = "#00ff9d";
             
-            Voice.updateMicState();
+            const aviEl = document.getElementById('ci-avi');
+            if(avatar) aviEl.src = avatar;
+            else aviEl.src = "https://via.placeholder.com/150";
+            
+            Voice.updateMicState(); // Обновить статус кнопок
 
         } else {
             overlay.classList.add('hidden');

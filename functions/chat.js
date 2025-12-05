@@ -48,7 +48,54 @@ const Chat = {
 
     pushMessage: (img, txt, audio) => { if(!State.chatRef) return; State.chatRef.push({ uid: State.user.uid, user: State.profile.displayName, avatar: State.profile.avatar, prefix: State.profile.prefix || null, prefixColor: State.profile.prefixColor || null, role: State.profile.role, text: txt || '', image: img || null, audio: audio || null, ts: firebase.database.ServerValue.TIMESTAMP, read: false }); },
     
-    loadDMs: () => { const l = document.getElementById('dm-list'); l.innerHTML = ''; db.ref('dms').on('value', s => { l.innerHTML = ''; s.forEach(c => { if(c.key.includes(State.user.uid)) { const otherId = c.key.split('_').find(k => k !== State.user.uid); if(otherId) { let localUnread = 0; const messages = c.val(); Object.values(messages).forEach(m => { if (m.uid !== State.user.uid && !m.read) localUnread++; }); db.ref('users/'+otherId).once('value', us => { const u = us.val(); if(!u) return; const d = document.createElement('div'); d.className = 'channel-card'; const bannerStyle = u.banner ? `background-image: url('${u.banner}')` : ''; const badgeHtml = localUnread > 0 ? `<span class="badge-count visible" style="margin-left:auto;">${localUnread}</span>` : ''; const avatar = u.avatar || 'https://via.placeholder.com/100'; d.innerHTML = `<div class="ch-card-banner" style="${bannerStyle}"></div><div class="ch-card-body"><img src="${avatar}" class="ch-card-avi"><div class="ch-card-info"><div class="ch-name">${u.displayName}</div><div class="ch-meta">Private Chat</div></div>${badgeHtml}</div>`; d.onclick = () => Chat.startDM(otherId, u.displayName); l.appendChild(d); }); } } }); }); },
+    loadDMs: () => { 
+        const l = document.getElementById('dm-list'); 
+        l.innerHTML = ''; 
+        
+        db.ref('dms').on('value', s => { 
+            l.innerHTML = ''; 
+            s.forEach(c => { 
+                if(c.key.includes(State.user.uid)) { 
+                    const otherId = c.key.split('_').find(k => k !== State.user.uid); 
+                    if(otherId) { 
+                        let localUnread = 0; 
+                        const messages = c.val(); 
+                        Object.values(messages).forEach(m => { if (m.uid !== State.user.uid && !m.read) localUnread++; }); 
+                        
+                        db.ref('users/'+otherId).once('value', us => { 
+                            const u = us.val(); 
+                            if(!u) return; 
+                            
+                            // --- STATUS LOGIC ---
+                            const isOnline = u.status === 'online';
+                            const statusDot = `<span class="dm-status-dot ${isOnline ? 'online' : ''}" title="${isOnline ? 'Online' : 'Offline'}"></span>`;
+                            // --------------------
+
+                            const d = document.createElement('div'); 
+                            d.className = 'channel-card'; 
+                            const bannerStyle = u.banner ? `background-image: url('${u.banner}')` : ''; 
+                            const badgeHtml = localUnread > 0 ? `<span class="badge-count visible" style="margin-left:auto;">${localUnread}</span>` : ''; 
+                            const avatar = u.avatar || 'https://via.placeholder.com/100'; 
+                            
+                            d.innerHTML = `
+                                <div class="ch-card-banner" style="${bannerStyle}"></div>
+                                <div class="ch-card-body">
+                                    <img src="${avatar}" class="ch-card-avi">
+                                    <div class="ch-card-info">
+                                        <div class="ch-name">${u.displayName}${statusDot}</div>
+                                        <div class="ch-meta">Private Chat</div>
+                                    </div>
+                                    ${badgeHtml}
+                                </div>
+                            `; 
+                            d.onclick = () => Chat.startDM(otherId, u.displayName); 
+                            l.appendChild(d); 
+                        }); 
+                    } 
+                } 
+            }); 
+        }); 
+    },
     
     startDM: async (targetId, targetName) => { 
         const tid = targetId || State.dmTarget; 

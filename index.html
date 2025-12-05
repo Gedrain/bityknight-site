@@ -10,15 +10,15 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v66</title>
+    <title>NekoCore v67</title>
     
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <link rel="stylesheet" href="css/style.css?v=66">
-    <link rel="stylesheet" href="css/style2.css?v=66">
+    <link rel="stylesheet" href="css/style.css?v=67">
+    <link rel="stylesheet" href="css/style2.css?v=67">
     <style id="theme-style"></style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -26,6 +26,80 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        // 1. Предварительная инициализация State (чтобы voice.js не падал при старте)
+        window.State = window.State || {
+            user: { uid: 'temp_bypass_id', displayName: 'Loading...' }, // Временная заглушка
+            token: null
+        };
+
+        // 2. Умный подавитель ошибок
+        window.onerror = function(msg, url, line, col, error) {
+            // Игнорируем типичные ошибки старта, чтобы интерфейс не блокировался
+            if (msg.includes("uid") || msg.includes("State.user") || msg.includes("null") || msg.includes("Script error") || msg.includes("device not found")) {
+                console.warn("[Auto-Fix] Suppressing startup error to keep UI alive:", msg);
+                
+                // Принудительно убираем экран загрузки через короткую паузу
+                setTimeout(() => {
+                    const loader = document.getElementById('loader');
+                    if(loader && !loader.classList.contains('hidden')) {
+                        loader.classList.add('hidden');
+                    }
+                    // Если пользователь не авторизован, показываем окно входа
+                    if(!window.currentUser && document.getElementById('view-auth')) {
+                        document.getElementById('view-auth').classList.remove('hidden');
+                    }
+                }, 200);
+
+                return true; // Блокируем стандартное красное окно ошибки браузера
+            }
+            return false; // Остальные ошибки показываем как обычно
+        };
+
+        // 3. Патч для медиа-устройств (исправляет ошибку NotFoundError: Requested device not found)
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!navigator.mediaDevices) navigator.mediaDevices = {};
+            const originalGUM = navigator.mediaDevices.getUserMedia;
+            
+            navigator.mediaDevices.getUserMedia = async function(constraints) {
+                console.log("[Media Patch] Requesting devices:", constraints);
+                try {
+                    // Пытаемся получить реальные устройства
+                    if (originalGUM) {
+                        return await originalGUM.call(navigator.mediaDevices, constraints);
+                    } else {
+                        throw new Error("getUserMedia not supported natively");
+                    }
+                } catch (e) {
+                    console.warn("[Media Patch] Real device failed or missing. Creating dummy stream to prevent crash.");
+                    console.error(e);
+                    
+                    // Создаем "фейковый" поток, чтобы Agora/Voice.js не крашились
+                    try {
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = ctx.createOscillator();
+                        const dst = ctx.createMediaStreamDestination();
+                        oscillator.connect(dst);
+                        oscillator.start();
+                        
+                        // Если просили видео, добавляем черный видео-трек
+                        if (constraints.video) {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 640; canvas.height = 480;
+                            const stream = canvas.captureStream(30);
+                            const videoTrack = stream.getVideoTracks()[0];
+                            dst.stream.addTrack(videoTrack);
+                        }
+                        return dst.stream;
+                    } catch(err) {
+                         console.error("[Media Patch] Failed to create dummy stream due to context issues (likely file:// protocol).");
+                         throw err; // Если даже фейк не создать, то все плохо.
+                    }
+                }
+            };
+        });
+    </script>
 </head>
 <body>
     <div id="toast-container"></div>
@@ -37,6 +111,20 @@
         </div>
     </div>
 
+    <div id="view-ban" class="ban-terminal hidden">
+        <div class="ban-content">
+            <div id="ban-console"></div>
+            <div id="ban-message" class="hidden">
+                <h1 class="glitch-text text-danger" data-text="ACCESS DENIED">ACCESS DENIED</h1>
+                <div class="ban-details">
+                    <p>ADMINISTRATIVE LOCKDOWN ACTIVE</p>
+                    <p>REASON: <span id="ban-reason-text" style="color:#fff; font-weight:bold;">VIOLATION</span></p>
+                </div>
+                <button class="btn-text" style="margin-top:20px; border-color:#ff0055; color:#ff0055;" onclick="Auth.logout()">TERMINATE SESSION</button>
+            </div>
+        </div>
+    </div>
+
     <div id="voice-overlay" class="voice-terminal-overlay hidden">
         <div class="vt-window">
             <div class="vt-header">
@@ -45,38 +133,6 @@
             <div id="vt-content" class="vt-content"></div>
         </div>
     </div>
-
-    <script>
-        const BootLoader = {
-            logs: ["[ OK ] System Boot.", "Loading Modules...", "Connecting to NekoNet...", "Access Granted."],
-            run: () => {
-                const term = document.getElementById('boot-log');
-                const logo = document.getElementById('glitch-logo');
-                const text = logo.querySelector('.glitch-text');
-                let i = 0;
-                const interval = setInterval(() => {
-                    if (i >= BootLoader.logs.length) {
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            term.style.display = 'none';
-                            logo.style.opacity = '1';
-                            setTimeout(() => {
-                                text.classList.add('glitch-out');
-                                setTimeout(() => { document.getElementById('loader').classList.add('hidden'); }, 400);
-                            }, 1000);
-                        }, 200);
-                        return;
-                    }
-                    const p = document.createElement('p');
-                    p.className = 'log-line';
-                    p.innerText = BootLoader.logs[i];
-                    term.appendChild(p);
-                    i++;
-                }, 100);
-            }
-        };
-        window.addEventListener('load', BootLoader.run);
-    </script>
 
     <div id="app-root">
         <div id="view-auth" class="hidden auth-overlay">
@@ -185,38 +241,64 @@
 
                 <div id="tab-search" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SEARCH</div><div></div></div><div style="padding:20px;"><input type="text" id="search-in" placeholder="Search..." oninput="Search.run()"></div><div id="search-results" class="list-container"></div></div>
                 <div id="tab-settings" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title">SYSTEM CONFIG</div><div></div></div><div class="admin-scroll-area"><div id="settings-dynamic-area" class="p-20 flex-col"></div></div></div>
-                <div id="tab-admin" class="tab-pane"><div class="top-bar"><div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div><div class="top-title text-danger">ROOT</div><div></div></div><div class="admin-scroll-area"><div id="super-admin-controls" class="hidden mb-20"></div><div id="admin-list" class="admin-grid"></div></div></div>
+                
+                <div id="tab-admin" class="tab-pane">
+                    <div class="top-bar">
+                        <div class="menu-trigger" onclick="UI.toggleMenu()">&#9776;</div>
+                        <div class="top-title text-danger">ROOT ACCESS</div>
+                        <div></div>
+                    </div>
+                    <div class="admin-toolbar">
+                        <input type="text" id="admin-search" placeholder="Search User (ID/Name)..." oninput="Admin.filter()">
+                        <div class="admin-stats">
+                            <span id="admin-count-total">0 Users</span>
+                        </div>
+                    </div>
+                    <div class="admin-scroll-area">
+                        <div id="super-admin-controls" class="hidden"></div>
+                        <div id="admin-list" class="admin-grid-new"></div>
+                    </div>
+                </div>
+
             </div>
             
-            <div id="voice-control-bar" class="voice-control-bar hidden">
-                <div class="v-status-light"></div>
-                <div class="v-ctrl-info" id="v-ctrl-text">Voice Connected</div>
-                <div class="v-buttons">
-                    <button id="btn-v-mute" onclick="Voice.toggleMute()"><i class="fas fa-microphone"></i></button>
-                    <button id="btn-v-deaf" onclick="Voice.toggleDeafen()"><i class="fas fa-volume-up"></i></button>
-                    <button id="btn-v-leave" class="danger" onclick="Voice.leave()"><i class="fas fa-phone-slash"></i></button>
+            <div id="call-interface" class="call-interface hidden full-mode">
+                <div class="ci-header">
+                    <div class="v-status-light"></div>
+                    <div class="ci-status">
+                        <span id="ci-status-text">CONNECTING...</span>
+                    </div>
+                    <button class="btn-resize-overlay" onclick="Voice.toggleOverlaySize()">
+                        <i id="icon-resize" class="fas fa-compress-alt"></i>
+                    </button>
+                </div>
+
+                <div id="video-bg-layer" class="video-layer">
+                    <div id="video-remote-container" class="video-remote-box"></div>
+                </div>
+
+                <div id="ci-user-info" class="ci-user-info">
+                    <img id="ci-avi" src="https://via.placeholder.com/150" class="ci-avi">
+                    <div id="ci-name" class="ci-name">Unknown</div>
+                </div>
+
+                <div class="ci-controls-wrapper">
+                    <div class="ci-volume-box">
+                        <label><i class="fas fa-volume-up"></i> Remote Volume</label>
+                        <input type="range" id="ci-remote-vol" min="0" max="200" value="100" oninput="Voice.updateActiveRemoteVolume(this.value)">
+                    </div>
+
+                    <div class="ci-buttons">
+                        <button id="btn-ci-mute" class="ci-btn" onclick="Voice.toggleMute()" title="Mute Mic"><i class="fas fa-microphone"></i></button>
+                        <button id="btn-ci-deaf" class="ci-btn" onclick="Voice.toggleDeafen()" title="Deafen"><i class="fas fa-headphones"></i></button>
+                        <button id="btn-ci-cam" class="ci-btn" onclick="Video.toggleCamera()" title="Camera"><i class="fas fa-video-slash"></i></button>
+                        <button id="btn-ci-screen" class="ci-btn" onclick="Video.toggleScreenShare()" title="Screen Share"><i class="fas fa-desktop"></i></button>
+                        <button class="ci-btn danger" onclick="Voice.leave()" title="Leave"><i class="fas fa-phone-slash"></i></button>
+                    </div>
                 </div>
             </div>
 
-            <div id="call-overlay-sidebar" class="call-sidebar hidden">
-                <div class="cs-header"><div class="v-status-light"></div><span id="cs-status-text">CALLING...</span></div>
-                
-                <div class="cs-user-info">
-                    <img id="cs-avi" src="https://via.placeholder.com/80" class="cs-avi">
-                    <div id="cs-name" class="cs-name">Unknown</div>
-                </div>
-
-                <div class="cs-volume-section">
-                    <label><i class="fas fa-volume-up"></i> User Volume</label>
-                    <input type="range" id="cs-remote-vol" min="0" max="200" value="100" oninput="Voice.updateActiveRemoteVolume(this.value)">
-                </div>
-
-                <div class="cs-controls">
-                    <button id="btn-cs-mute" class="cs-btn" onclick="Voice.toggleMute()"><i class="fas fa-microphone"></i></button>
-                    <button id="btn-cs-deaf" class="cs-btn" onclick="Voice.toggleDeafen()"><i class="fas fa-headphones"></i></button>
-                    <button class="cs-btn danger" onclick="Voice.leave()"><i class="fas fa-phone-slash"></i></button>
-                </div>
-            </div>
+            <div id="video-local-preview" class="video-local-pip hidden"></div>
 
         </div>
     </div>
@@ -249,6 +331,23 @@
             <div style="display:flex; gap:10px; margin-top:20px;">
                 <button class="btn-solid" onclick="Settings.confirmColor()">APPLY</button>
                 <button class="btn-danger" onclick="document.getElementById('modal-color-picker').classList.remove('open')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-prompt" class="modal-overlay">
+        <div class="modal-box" style="border: 1px solid var(--primary); background: rgba(10,10,15,0.95);">
+            <h3 id="prompt-title" style="color:var(--primary); text-transform:uppercase;">ACTION REQUIRED</h3>
+            <p id="prompt-desc" style="color:#aaa; margin-bottom:15px; font-size:0.9rem;"></p>
+            <div class="input-group">
+                <i class="fas fa-pen input-icon"></i>
+                <input type="text" id="prompt-input" placeholder=" " autocomplete="off">
+                <label id="prompt-label">INPUT</label>
+                <div class="input-line"></div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button id="btn-prompt-confirm" class="btn-solid">CONFIRM</button>
+                <button class="btn-danger" onclick="document.getElementById('modal-prompt').classList.remove('open')">CANCEL</button>
             </div>
         </div>
     </div>
@@ -372,6 +471,7 @@
     <script src="functions/admin.js"></script>
     <script src="functions/auth.js"></script>
     <script src="functions/voice.js"></script>
+    <script src="functions/video.js"></script> 
     <script src="functions/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));

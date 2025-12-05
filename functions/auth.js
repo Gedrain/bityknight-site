@@ -4,8 +4,25 @@ const Auth = {
             if(u) {
                 const myStatus = db.ref('users/' + u.uid + '/status'); const myLastSeen = db.ref('users/' + u.uid + '/lastSeen');
                 db.ref('.info/connected').on('value', (snap) => { if (snap.val() === true) { myStatus.onDisconnect().set('offline'); myLastSeen.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP); myStatus.set('online'); } });
+                
                 db.ref('users/'+u.uid).on('value', s => {
-                    if(!s.exists()) return; const v = s.val(); if(v.isBanned) { auth.signOut(); return; }
+                    if(!s.exists()) return; 
+                    const v = s.val(); 
+                    
+                    // --- BAN LOGIC START ---
+                    if(v.isBanned) { 
+                        // Скрываем основной интерфейс
+                        document.getElementById('view-main').classList.add('hidden');
+                        document.getElementById('view-auth').classList.add('hidden');
+                        // Показываем экран бана с анимацией
+                        Auth.renderBanScreen(v.banReason || "No Reason Specified");
+                        return; 
+                    } else {
+                        // Если разбанили, скрываем терминал
+                        document.getElementById('view-ban').classList.add('hidden');
+                    }
+                    // --- BAN LOGIC END ---
+
                     State.user = u; State.profile = v;
                     document.getElementById('view-auth').classList.add('hidden'); document.getElementById('view-main').classList.remove('hidden');
                     if(v.role==='admin'||v.role==='super') document.getElementById('nav-admin').classList.remove('hidden');
@@ -16,6 +33,47 @@ const Auth = {
             } else { document.getElementById('view-auth').classList.remove('hidden'); }
         });
     },
+    
+    // Анимация терминала при бане
+    renderBanScreen: (reason) => {
+        const screen = document.getElementById('view-ban');
+        const console = document.getElementById('ban-console');
+        const msg = document.getElementById('ban-message');
+        const reasonText = document.getElementById('ban-reason-text');
+        
+        screen.classList.remove('hidden');
+        console.innerHTML = '';
+        msg.classList.add('hidden');
+        reasonText.innerText = reason.toUpperCase();
+
+        const logs = [
+            "Initiating session...",
+            "Verifying identity signature...",
+            "Decrypting user profile...",
+            "Accessing NekoNet database...",
+            "Checking blacklist status...",
+            "<span style='color:#ff0055'>[ALERT]</span> SECURITY FLAG DETECTED",
+            "<span style='color:#ff0055'>[CRITICAL]</span> ACCOUNT SUSPENDED"
+        ];
+
+        let i = 0;
+        const printLog = () => {
+            if(i < logs.length) {
+                const div = document.createElement('div');
+                div.className = 'log-entry';
+                div.innerHTML = `> ${logs[i]}`;
+                console.appendChild(div);
+                i++;
+                setTimeout(printLog, 300);
+            } else {
+                setTimeout(() => {
+                    msg.classList.remove('hidden');
+                }, 500);
+            }
+        };
+        printLog();
+    },
+
     setMode: (isReg) => {
         State.isReg = isReg; const container = document.querySelector('.auth-switch-container'); const nickGroup = document.getElementById('group-nick'); const btnText = document.querySelector('.btn-cyber .btn-content'); const tabLogin = document.getElementById('tab-login'); const tabReg = document.getElementById('tab-reg');
         if (isReg) { container.classList.add('reg-mode'); nickGroup.classList.remove('collapsed'); btnText.innerText = "REGISTER_NEKO_ID"; tabLogin.classList.remove('active'); tabReg.classList.add('active'); } 
