@@ -1,5 +1,5 @@
-const CACHE_NAME = 'neko-core-v66'; // ВЕРСИЯ ОБНОВЛЕНА
-const DYNAMIC_CACHE = 'neko-dynamic-v66';
+const CACHE_NAME = 'neko-core-v67'; // ВЕРСИЯ ОБНОВЛЕНА
+const DYNAMIC_CACHE = 'neko-dynamic-v67';
 
 const ASSETS = [
     './',
