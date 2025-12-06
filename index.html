@@ -10,16 +10,17 @@
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
-    <title>NekoCore v67</title>
+    <title>NekoCore v70</title>
     
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    
     <link rel="stylesheet" href="css/style.css?v=67">
-    <link rel="stylesheet" href="css/style2.css?v=67">
-    <style id="theme-style"></style>
+    <link rel="stylesheet" href="css/style2.css?v=71">
+    <link rel="stylesheet" href="css/style3.css?v=2"> <style id="theme-style"></style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -28,80 +29,76 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
-        // 1. Предварительная инициализация State (чтобы voice.js не падал при старте)
+        // 1. Предварительная инициализация State
         window.State = window.State || {
-            user: { uid: 'temp_bypass_id', displayName: 'Loading...' }, // Временная заглушка
+            user: { uid: 'temp_bypass_id', displayName: 'Loading...' },
             token: null
         };
 
         // 2. Умный подавитель ошибок
         window.onerror = function(msg, url, line, col, error) {
-            // Игнорируем типичные ошибки старта, чтобы интерфейс не блокировался
             if (msg.includes("uid") || msg.includes("State.user") || msg.includes("null") || msg.includes("Script error") || msg.includes("device not found")) {
-                console.warn("[Auto-Fix] Suppressing startup error to keep UI alive:", msg);
-                
-                // Принудительно убираем экран загрузки через короткую паузу
+                console.warn("[Auto-Fix] Suppressing startup error:", msg);
                 setTimeout(() => {
                     const loader = document.getElementById('loader');
-                    if(loader && !loader.classList.contains('hidden')) {
-                        loader.classList.add('hidden');
-                    }
-                    // Если пользователь не авторизован, показываем окно входа
-                    if(!window.currentUser && document.getElementById('view-auth')) {
-                        document.getElementById('view-auth').classList.remove('hidden');
-                    }
+                    if(loader && !loader.classList.contains('hidden')) loader.classList.add('hidden');
+                    if(!window.currentUser && document.getElementById('view-auth')) document.getElementById('view-auth').classList.remove('hidden');
                 }, 200);
-
-                return true; // Блокируем стандартное красное окно ошибки браузера
+                return true; 
             }
-            return false; // Остальные ошибки показываем как обычно
+            return false;
         };
 
-        // 3. Патч для медиа-устройств (исправляет ошибку NotFoundError: Requested device not found)
+        // 3. Патч для медиа-устройств
         window.addEventListener('DOMContentLoaded', () => {
             if (!navigator.mediaDevices) navigator.mediaDevices = {};
             const originalGUM = navigator.mediaDevices.getUserMedia;
             
             navigator.mediaDevices.getUserMedia = async function(constraints) {
-                console.log("[Media Patch] Requesting devices:", constraints);
                 try {
-                    // Пытаемся получить реальные устройства
-                    if (originalGUM) {
-                        return await originalGUM.call(navigator.mediaDevices, constraints);
-                    } else {
-                        throw new Error("getUserMedia not supported natively");
-                    }
+                    if (originalGUM) return await originalGUM.call(navigator.mediaDevices, constraints);
+                    else throw new Error("getUserMedia not supported natively");
                 } catch (e) {
-                    console.warn("[Media Patch] Real device failed or missing. Creating dummy stream to prevent crash.");
-                    console.error(e);
-                    
-                    // Создаем "фейковый" поток, чтобы Agora/Voice.js не крашились
+                    console.warn("[Media Patch] Creating dummy stream.");
                     try {
                         const ctx = new (window.AudioContext || window.webkitAudioContext)();
                         const oscillator = ctx.createOscillator();
                         const dst = ctx.createMediaStreamDestination();
                         oscillator.connect(dst);
                         oscillator.start();
-                        
-                        // Если просили видео, добавляем черный видео-трек
                         if (constraints.video) {
                             const canvas = document.createElement('canvas');
                             canvas.width = 640; canvas.height = 480;
                             const stream = canvas.captureStream(30);
-                            const videoTrack = stream.getVideoTracks()[0];
-                            dst.stream.addTrack(videoTrack);
+                            dst.stream.addTrack(stream.getVideoTracks()[0]);
                         }
                         return dst.stream;
-                    } catch(err) {
-                         console.error("[Media Patch] Failed to create dummy stream due to context issues (likely file:// protocol).");
-                         throw err; // Если даже фейк не создать, то все плохо.
-                    }
+                    } catch(err) { throw err; }
                 }
             };
         });
     </script>
 </head>
 <body>
+    
+    <div id="global-player-bar" class="global-audio-bar hidden">
+        <div class="gab-controls">
+            <button onclick="Chat.seekGlobal(-10)"><i class="fas fa-backward"></i></button>
+            <button id="gab-play-btn" onclick="Chat.toggleGlobalPlay()"><i class="fas fa-play"></i></button>
+            <button onclick="Chat.seekGlobal(10)"><i class="fas fa-forward"></i></button>
+        </div>
+        <div class="gab-info">
+            <div id="gab-title" class="gab-title">Select Track...</div>
+            <div class="gab-track" onclick="/* Logic in JS if needed */">
+                <div id="gab-progress" class="gab-progress-bar"></div>
+            </div>
+        </div>
+        <div class="gab-meta">
+            <span id="gab-time">0:00</span>
+            <button class="gab-btn-sm" id="gab-speed" onclick="Chat.toggleGlobalSpeed()">1x</button>
+            <button class="gab-btn-sm" onclick="Chat.closeGlobalPlayer()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
     <div id="toast-container"></div>
     <div id="bg-canvas"></div> 
     <div id="loader">
@@ -208,6 +205,7 @@
                                 <input type="file" id="file-in" hidden accept="image/*">
                                 <input type="text" id="msg-in" placeholder="Message..." autocomplete="off">
                                 
+                                <button id="btn-video" onclick="VideoChat.openRecorder()"><i class="fas fa-camera"></i></button>
                                 <button id="btn-mic" onclick="Chat.startRec()"><i class="fas fa-microphone"></i></button>
                                 <button id="btn-send" class="hidden" onclick="Chat.send()"><i class="fas fa-paper-plane"></i></button>
                             </div>
@@ -223,6 +221,18 @@
                                 <i class="fas fa-paper-plane" onclick="Chat.finishRec()"></i>
                             </div>
                         </div>
+
+                        <div id="video-msg-ui" class="hidden">
+                            <button id="btn-v-close" onclick="VideoChat.closeRecorder()"><i class="fas fa-times"></i></button>
+                            <div class="v-msg-wrapper">
+                                <video id="v-msg-preview" muted playsinline></video>
+                                <div class="v-msg-overlay">
+                                    <div id="v-msg-timer">0:00</div>
+                                </div>
+                            </div>
+                            <button id="btn-v-record" onclick="VideoChat.toggleRecord()"><div class="record-inner"></div></button>
+                        </div>
+
                     </div>
                 </div>
 
@@ -472,6 +482,8 @@
     <script src="functions/auth.js"></script>
     <script src="functions/voice.js"></script>
     <script src="functions/video.js"></script> 
+    <script src="functions/VideoChatms.js"></script>
+
     <script src="functions/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
