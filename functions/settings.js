@@ -135,8 +135,41 @@ window.Settings = {
                 <div class="set-menu-card" onclick="Settings.renderAppearanceEditor()"><i class="fas fa-paint-brush"></i><span>APPEARANCE</span><div class="sm-desc">Colors, Fonts, UI</div></div>
                 <div class="set-menu-card" onclick="Settings.renderVoiceSettings()"><i class="fas fa-microphone-lines"></i><span>AUDIO / VOICE</span><div class="sm-desc">Inputs, Outputs, Volume</div></div>
                 <div class="set-menu-card" onclick="Settings.renderPrivacySettings()"><i class="fas fa-user-shield"></i><span>PRIVACY</span><div class="sm-desc">Blocklist, DMs, Calls</div></div>
+                <div class="set-menu-card" onclick="Settings.renderInfo()"><i class="fas fa-info-circle"></i><span>INFO / ABOUT</span><div class="sm-desc">Developer & Project</div></div>
             </div>
-            <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v64.0 STABLE</div>
+            <div style="margin-top:30px; text-align:center; opacity:0.3; font-size:0.7rem; font-family:monospace;">NEKO CORE v70.0 STABLE</div>
+        `;
+    },
+
+    // --- ФУНКЦИЯ ДЛЯ СТРАНИЦЫ ИНФО (C ФОТО info.jpg) ---
+    renderInfo: () => {
+        const container = document.getElementById('settings-dynamic-area');
+        if(!container) return;
+
+        container.innerHTML = `
+            <div class="set-header-nav"><button class="btn-text" onclick="Settings.renderMainMenu()"><i class="fas fa-arrow-left"></i> BACK</button><h3>PROJECT INFO</h3></div>
+            <div class="scroll-area-set" style="display:flex; flex-direction:column; align-items:center; height:100%; overflow-y:auto; padding-bottom:50px;">
+                
+                <div class="info-card-container">
+                    <h1 class="info-title glitch-text-anim">NEKO CORE</h1>
+                    
+                    <div class="info-text-block">
+                        <p class="anim-line delay-1">Проект разрабатывается одним разработчиком — <span class="dev-name">GedRain</span></p>
+                        <p class="anim-line delay-2">На данный момент проект нацелен на полностью <span class="highlight">бесплатное базирование</span> и является отечественным аналогом другим мессенеджерам.</p>
+                        <p class="anim-line delay-3" style="margin-top:15px; color:#aaa;">System Status: <span style="color:#00ff9d">ONLINE</span></p>
+                    </div>
+
+                    <a href="https://t.me/GedRain" target="_blank" class="tg-connect-btn anim-line delay-4">
+                        <i class="fab fa-telegram-plane"></i> TELEGRAM @GedRain
+                    </a>
+                </div>
+
+                <div class="info-image-container anim-line delay-5">
+                    <img src="info.jpg" alt="Project Info Image" class="info-image">
+                    <div class="info-image-filter"></div>
+                </div>
+
+            </div>
         `;
     },
 
