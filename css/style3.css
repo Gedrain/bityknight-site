@@ -1,0 +1,454 @@
+/* =========================================
+   1. GLOBAL AUDIO PLAYER (Purple/Black Theme)
+   ========================================= */
+
+.global-audio-bar {
+    position: fixed;
+    top: 0;
+    left: 280px; /* Отступ для Sidebar */
+    right: 0;
+    height: 60px;
+    background: #05000a; /* Глубокий черный */
+    border-bottom: 1px solid #d600ff; /* Фиолетовая линия */
+    z-index: 2000; /* Поверх всего */
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 5px 30px rgba(214, 0, 255, 0.15);
+    animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.global-audio-bar.hidden {
+    display: none;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+/* Мобильная адаптация плеера */
+@media (max-width: 768px) {
+    .global-audio-bar {
+        left: 0;
+        top: auto;
+        bottom: 0; /* На телефоне лучше снизу, чтобы не перекрывать меню */
+        border-bottom: none;
+        border-top: 1px solid #d600ff;
+    }
+}
+
+/* Кнопки управления плеером */
+.gab-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-right: 20px;
+}
+
+.gab-controls button {
+    background: transparent;
+    border: none;
+    color: #8b8b9b;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gab-controls button:hover {
+    color: #d600ff;
+    text-shadow: 0 0 10px rgba(214, 0, 255, 0.5);
+}
+
+#gab-play-btn {
+    color: #d600ff;
+    font-size: 1.4rem;
+}
+
+/* Инфо о треке */
+.gab-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 20px;
+    overflow: hidden;
+}
+
+.gab-title {
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+/* Полоса прогресса */
+.gab-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.gab-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #d600ff;
+    box-shadow: 0 0 10px #d600ff;
+    transition: width 0.1s linear;
+}
+
+/* Мета данные плеера */
+.gab-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#gab-time {
+    font-family: 'JetBrains Mono', monospace;
+    color: #d600ff;
+    font-size: 0.85rem;
+    text-shadow: 0 0 5px rgba(214, 0, 255, 0.3);
+}
+
+.gab-btn-sm {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #aaa;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: monospace;
+    transition: 0.2s;
+}
+
+.gab-btn-sm:hover {
+    border-color: #d600ff;
+    color: #fff;
+    background: rgba(214, 0, 255, 0.1);
+}
+
+/* Кнопка аудио в чате */
+.simple-audio-msg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(214, 0, 255, 0.2);
+    cursor: pointer;
+    transition: 0.2s;
+    width: fit-content;
+}
+
+.simple-audio-msg:hover {
+    background: rgba(214, 0, 255, 0.1);
+    border-color: #d600ff;
+}
+
+.sam-icon {
+    color: #d600ff;
+    font-size: 1.2rem;
+}
+
+.sam-text {
+    font-size: 0.9rem;
+    color: #ddd;
+    font-weight: 500;
+}
+
+/* =========================================
+   2. INFO PAGE STYLES (Animations & Image Filter)
+   ========================================= */
+
+.info-card-container {
+    background: rgba(14, 14, 18, 0.7);
+    border: 1px solid rgba(214, 0, 255, 0.2);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    margin-top: 20px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.info-title {
+    font-size: 2.5rem;
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 30px;
+    letter-spacing: 5px;
+    text-shadow: 0 0 20px rgba(214, 0, 255, 0.8);
+    position: relative;
+}
+
+.info-text-block p {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.dev-name {
+    color: #d600ff;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    text-shadow: 0 0 10px rgba(214,0,255,0.6);
+}
+
+.highlight {
+    color: #00ff9d;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.4);
+}
+
+.tg-connect-btn {
+    display: inline-block;
+    margin-top: 25px;
+    padding: 14px 35px;
+    background: linear-gradient(45deg, #0088cc, #00aaff);
+    color: #fff;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 800;
+    font-family: 'Exo 2', sans-serif;
+    letter-spacing: 1px;
+    box-shadow: 0 5px 20px rgba(0, 136, 204, 0.4);
+    transition: 0.3s;
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.tg-connect-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(0, 136, 204, 0.6);
+    background: #00aaff;
+    color: #000;
+}
+
+/* --- ANIMATIONS (Sequential Text Reveal) --- */
+
+.anim-line {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: textFadeIn 0.8s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Задержки для последовательного появления */
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.8s; }
+.delay-3 { animation-delay: 1.6s; }
+.delay-4 { animation-delay: 2.2s; }
+.delay-5 { animation-delay: 2.8s; } /* Image delay */
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(50px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes textFadeIn {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- INFO IMAGE WITH FILTER --- */
+
+.info-image-container {
+    position: relative;
+    width: 100%;
+    max-width: 350px; /* Ограничиваем ширину */
+    height: 250px; /* Фиксированная высота */
+    margin-top: 40px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 3px solid #d600ff; /* Фиолетовая рамка */
+    box-shadow: 0 0 40px rgba(214, 0, 255, 0.4);
+    opacity: 0; /* Для анимации */
+}
+
+.info-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Заполняем контейнер, обрезая лишнее */
+    display: block;
+}
+
+/* Черно-фиолетовый фильтр (наложение) */
+.info-image-filter {
+    position: absolute;
+    inset: 0; /* Растягиваем на весь контейнер */
+    background: linear-gradient(to bottom, rgba(214, 0, 255, 0.3), rgba(5, 0, 10, 0.9));
+    mix-blend-mode: multiply; /* Режим наложения для затемнения */
+    pointer-events: none; /* Пропускаем клики сквозь фильтр */
+}
+
+/* =========================================
+   3. VIDEO MESSAGE UI (SQUARE VIDEO)
+   ========================================= */
+
+/* Интерфейс записи (вместо инпута) */
+#video-msg-ui {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 12px;
+    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#video-msg-ui.hidden {
+    display: none;
+}
+
+.v-msg-wrapper {
+    position: relative;
+    width: 100px; /* Превью записи тоже квадратное */
+    height: 100px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #d600ff;
+    background: #000;
+}
+
+#v-msg-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* Зеркалим */
+}
+
+.v-msg-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    padding: 2px 0;
+    text-align: center;
+}
+
+#v-msg-timer {
+    font-family: 'JetBrains Mono', monospace;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Кнопка записи (Красный круг) */
+#btn-v-record {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: 10px;
+    transition: 0.2s;
+}
+
+#btn-v-record .record-inner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ff0055;
+    transition: 0.2s;
+}
+
+#btn-v-record:hover .record-inner {
+    transform: scale(0.9);
+}
+
+#btn-v-record.recording {
+    border-color: #ff0055;
+}
+
+#btn-v-record.recording .record-inner {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px; /* Квадрат при записи (стоп) */
+    animation: pulseRec 1s infinite;
+}
+
+@keyframes pulseRec {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+#btn-v-close {
+    background: transparent;
+    border: none;
+    color: #aaa;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#btn-v-close:hover {
+    color: #fff;
+}
+
+/* Кнопка открытия камеры в обычном инпуте */
+#btn-video {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    margin-left: 5px;
+}
+
+#btn-video:hover {
+    color: #d600ff;
+    background: rgba(255, 255, 255, 0.05);
+    text-shadow: 0 0 10px #d600ff;
+}
+
+/* Стиль самого сообщения в чате */
+.video-msg-wrapper {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.msg-square-video {
+    width: 240px; /* Размер в чате */
+    height: 240px;
+    object-fit: cover;
+    border-radius: 15px; /* Скругленные углы квадрата */
+    border: 2px solid #d600ff;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    background: #000;
+}
